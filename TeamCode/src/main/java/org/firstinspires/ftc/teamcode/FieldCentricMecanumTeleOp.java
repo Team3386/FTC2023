@@ -8,13 +8,14 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
 import java.sql.Time;
+
 import java.sql.Timestamp;
 
-@TeleOp(name = "FTC-2023 1.0")
+@TeleOp(name = "FTC-2023 1.1")
 public class FieldCentricMecanumTeleOp extends LinearOpMode {
 
     // LEDs runs when OP mode is selected
@@ -42,7 +43,7 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
         int coElevatorSpeed = 80;
 
 
-        //int maximumHeight = 4500;
+        int maximumHeight = 4600;
 
         Servo pince = hardwareMap.servo.get("pince");
         boolean pinceState = false;
@@ -141,50 +142,7 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
                 motorFrontRight.setPower(frontRightPower);
                 motorBackRight.setPower(backRightPower);
 
-
-                //Elevator
-                if (gamepad1.y && (elevator.getTargetPosition() > 0)) {
-                    elevatorPOS = 0;
-                    pattern = RevBlinkinLedDriver.BlinkinPattern.HEARTBEAT_RED;
-                }
-                if (gamepad1.x && (elevator.getTargetPosition() < 4600)) {
-                    elevatorPOS = 4600;
-                }
-
-                if (gamepad1.dpad_up || gamepad1.dpad_down || (Math.abs(gamepad1.right_trigger) > .1)
-                        || (Math.abs(gamepad1.left_trigger) > .1)) {
-
-                    if ((Math.abs(gamepad1.right_trigger) > .1) && (elevator.getTargetPosition() < 4600)) {
-                        elevatorPOS += elevatorSpeed * Math.abs(gamepad1.right_trigger) * 3;
-                    } else if ((Math.abs(gamepad1.left_trigger) > .1) && (elevator.getTargetPosition() > 0)) {
-                        elevatorPOS -= elevatorSpeed * Math.abs(gamepad1.left_trigger) * 3;
-                    } else if (gamepad1.dpad_up && (elevator.getTargetPosition() < 4600)) {
-                        double dxSpeed = 0;
-
-                        if (pinceState) {
-                            dxSpeed = 200;
-                        }
-                        elevatorPOS += elevatorSpeed + Math.abs(dxSpeed);
-
-                    } else if (gamepad1.dpad_down && (elevator.getTargetPosition() > 0)) {
-
-                        double dxSpeed = 0;
-
-                        if (pinceState) {
-                            dxSpeed = 200;
-                        }
-                        elevatorPOS -= elevatorSpeed - Math.abs(dxSpeed);
-                    }
-                } else {
-                    elevatorPOS = elevator.getCurrentPosition();
-                }
-
-                elevator.setTargetPosition(elevatorPOS);
-
-                telemetry.addData("ElevatorPOS", elevatorPOS);
-                telemetry.addData("CurrentPOS", elevator.getCurrentPosition());
-
-                //Pince
+                //Pince pilot (gamepad1)
                 if (gamepad1.a) {
                     if (!isPressed_a) {
                         pinceState = !pinceState;
@@ -199,23 +157,62 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
                     }
                 } else {
                     isPressed_a = false;
+
+                //Elevator copilot(gamepad2)
+                Gamepad PlayerWithElevator = gamepad2;
+
+                if (PlayerWithElevator.y && (elevator.getTargetPosition() > 0)) {
+                    elevatorPOS = 0;
+                    pattern = RevBlinkinLedDriver.BlinkinPattern.HEARTBEAT_RED;
+                }
+                if (PlayerWithElevator.x && (elevator.getTargetPosition() < maximumHeight)) {
+                    elevatorPOS = maximumHeight;
                 }
 
-                // COPILOT CONTROLS
-                // Co-Elevator
-                if (gamepad2.dpad_up || gamepad2.dpad_down) {
-                    if (gamepad2.dpad_up && (elevator.getTargetPosition() < 4500)) {
-                        elevatorPOS += coElevatorSpeed;
-                    } else if (gamepad2.dpad_down && (elevator.getTargetPosition() > 0)) {
-                        elevatorPOS -= coElevatorSpeed;
+                if ((PlayerWithElevator.dpad_up || PlayerWithElevator.dpad_down)
+                        ||
+                        ((Math.abs(PlayerWithElevator.right_trigger) > .1) || (Math.abs(PlayerWithElevator.left_trigger) > .1))
+                ) {
+
+                    if ((Math.abs(PlayerWithElevator.right_trigger) > .1) && (elevator.getTargetPosition() < maximumHeight)) {
+
+                        elevatorPOS += elevatorSpeed * Math.abs(PlayerWithElevator.right_trigger) * 3;
+
+                    } else if ((Math.abs(PlayerWithElevator.left_trigger) > .1) && (elevator.getTargetPosition() > 0)) {
+
+                        elevatorPOS -= elevatorSpeed * Math.abs(PlayerWithElevator.left_trigger) * 3;
+
+
+                    } else if (PlayerWithElevator.dpad_up && (elevator.getTargetPosition() < maximumHeight)) {
+                        double dxSpeed = 0;
+
+                        if (pinceState) {
+                            dxSpeed = 200;
+                        }
+                        elevatorPOS += elevatorSpeed + Math.abs(dxSpeed);
+
+                    } else if (PlayerWithElevator.dpad_down && (elevator.getTargetPosition() > 0)) {
+
+                        double dxSpeed = 0;
+
+                        if (pinceState) {
+                            dxSpeed = 200;
+                        }
+                        elevatorPOS -= elevatorSpeed + Math.abs(dxSpeed);
                     }
                 } else {
                     elevatorPOS = elevator.getCurrentPosition();
                 }
+
+                elevator.setTargetPosition(elevatorPOS);
+
+                telemetry.addData("ElevatorPOS", elevatorPOS);
+                telemetry.addData("CurrentPOS", elevator.getCurrentPosition());
 
                 light.setPattern(pattern);
                 telemetry.update();
             }
         }
     }
+}
 }
