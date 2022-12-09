@@ -159,31 +159,31 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
                     isPressed_a = false;
 
                 //Elevator copilot(gamepad2)
-                Gamepad PlayerWithElevator = gamepad2;
+                Gamepad PlayerWithElevator = gamepad2; // CHANGE THIS TO CONTROLLING PLAYER
 
-                if (PlayerWithElevator.y && (elevator.getTargetPosition() > 0)) {
+                if (PlayerWithElevator.y) {
                     elevatorPOS = 0;
                     pattern = RevBlinkinLedDriver.BlinkinPattern.HEARTBEAT_RED;
                 }
-                if (PlayerWithElevator.x && (elevator.getTargetPosition() < maximumHeight)) {
-                    elevatorPOS = maximumHeight;
+                if (PlayerWithElevator.x) {
+                    elevatorPOS = maximumHeight; // CHECK CONSTANT
                 }
 
                 if ((PlayerWithElevator.dpad_up || PlayerWithElevator.dpad_down)
                         ||
-                        ((Math.abs(PlayerWithElevator.right_trigger) > .1) || (Math.abs(PlayerWithElevator.left_trigger) > .1))
+                        ((Math.abs(PlayerWithElevator.right_trigger) > .1) || (Math.abs(PlayerWithElevator.left_trigger) > .1)) // DEADZONE CHANGE (.1)
                 ) {
 
                     if ((Math.abs(PlayerWithElevator.right_trigger) > .1) && (elevator.getTargetPosition() < maximumHeight)) {
 
-                        elevatorPOS += elevatorSpeed * Math.abs(PlayerWithElevator.right_trigger) * 3;
+                        elevatorPOS += elevatorSpeed * Math.abs(PlayerWithElevator.right_trigger) * 3; // CHANGE (3) TO ACCELERATE ELEVATOR SPEED
 
                     } else if ((Math.abs(PlayerWithElevator.left_trigger) > .1) && (elevator.getTargetPosition() > 0)) {
 
                         elevatorPOS -= elevatorSpeed * Math.abs(PlayerWithElevator.left_trigger) * 3;
 
 
-                    } else if (PlayerWithElevator.dpad_up && (elevator.getTargetPosition() < maximumHeight)) {
+                    } else if (PlayerWithElevator.dpad_up && (elevator.getTargetPosition() < maximumHeight)) { // REMOVE IF NOT USED BY PILOTS
                         double dxSpeed = 0;
 
                         if (pinceState) {
