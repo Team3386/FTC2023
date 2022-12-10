@@ -46,7 +46,7 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
         int maximumHeight = 4600;
 
         Servo pince = hardwareMap.servo.get("pince");
-        boolean pinceState = false;
+        boolean pinceState = true;
         boolean isPressed_a = false;
 
         light = hardwareMap.get(RevBlinkinLedDriver.class, "light");
@@ -76,7 +76,7 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
         // Technically this is the default, however specifying it is clearer
         parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
         // Without this, data retrieving from the IMU throws an exception
-        imu.initialize(parameters);
+        //imu.initialize(parameters);
 
 
         waitForStart();
@@ -143,7 +143,7 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
                 motorBackRight.setPower(backRightPower);
 
                 //Pince pilot (gamepad1)
-                if (gamepad1.a) {
+                if (gamepad1.right_trigger>0.5) {
                     if (!isPressed_a) {
                         pinceState = !pinceState;
                         isPressed_a = true;
@@ -152,7 +152,7 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
                         pince.setPosition(1);
                         pattern = RevBlinkinLedDriver.BlinkinPattern.BLUE_GREEN;
                     } else {
-                        pince.setPosition(0.675);
+                        pince.setPosition(0.7);
                         pattern = RevBlinkinLedDriver.BlinkinPattern.GREEN;
                     }
                 } else {
