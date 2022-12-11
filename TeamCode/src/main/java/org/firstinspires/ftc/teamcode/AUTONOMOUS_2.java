@@ -137,27 +137,11 @@ public class AUTONOMOUS_2 extends LinearOpMode {
             //Take back cone
             cmd_setElevatorPOS(0, 1);
             cmd_pinceClose();
-            cmd_setElevatorPOS(900, 0.5);
+            cmd_setElevatorPOS(500, 0.5);
 
-            //Start (potition to y mouvement)
-            cmd_move(0, 0.30, 0, 0.3);
-            cmd_move(-0.46, 0, 0, 1.8);
-            cmd_setElevatorPOS(4600, 0);
-            cmd_move(0, 0, 0.30, 2.05);
-            //Important: Position to jonction (y axis)
-            cmd_move(0,0.2,0,0.5);
-            cmd_move(0, 0.46, 0, 3.1);
-            //Important: Drop cone in jonction
-            //cmd_move(-0.35, 0, 0, 0.25);
-            cmd_pinceOpen();
-            //Important: Take distance from jonction
-            cmd_move(-0.45, 0, 0, 0.30);
-            //Important: Going to parking (signal cone)
-            cmd_move(0, -0.26, 0, 2.5);
-
-            cmd_setElevatorPOS(0, 3.0); // READY FOR VISION POSITIONING
+            //NEW
+            cmd_move(0,0.26,0,2.5);
             cmd_visionPosition(detectedImage);
-
 
             //requestOpModeStop();
         }
@@ -286,10 +270,10 @@ public class AUTONOMOUS_2 extends LinearOpMode {
 
     public void cmd_visionPosition(String label) {
         if (label == "3 Panel") {
-            cmd_move(0.5,0,0,2.8);
-        }else if (label == "2 Bulb") {
             cmd_move(0.5,0,0,1.5);
-        } else if (label == "1 Bolt"){
+        }else if (label == "1 Bolt") {
+            cmd_move(-0.5,0,0,1.5);
+        } else if (label == "2 Bulb"){
             return;
         } else{
         }

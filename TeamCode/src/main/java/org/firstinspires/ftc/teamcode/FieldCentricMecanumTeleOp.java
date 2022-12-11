@@ -11,11 +11,12 @@ import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
 import java.sql.Time;
 
 import java.sql.Timestamp;
 
-@TeleOp(name = "FTC-2023 1.1")
+@TeleOp(name = "FTC-2023 1.2")
 public class FieldCentricMecanumTeleOp extends LinearOpMode {
 
     // LEDs runs when OP mode is selected
@@ -24,6 +25,7 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
     static final double FORWARD_SPEED = 0.6;
     static final double TURN_SPEED = 0.5;
+    static final double FRICTION_COMPENSATION = 1; // 1.2  ( 120%  MAX POWER )
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -104,19 +106,19 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
             while (opModeIsActive()) {
                 // Joystick
                 if (Math.abs(gamepad1.left_stick_y) > deadZone) {
-                    y = gamepad1.left_stick_y * 0.5;// Remember, this is reversed!
+                    y = gamepad1.left_stick_y * 0.8;// Remember, this is reversed!
                 } else {
                     y = 0;
                 }
 
                 if (Math.abs(gamepad1.left_stick_x) > deadZone) {
-                    x = -gamepad1.left_stick_x * 0.5; // Counteract imperfect strafing
+                    x = -gamepad1.left_stick_x * 0.8; // Counteract imperfect strafing
                 } else {
                     x = 0;
                 }
 
                 if (Math.abs(gamepad1.right_stick_x) > deadZone) {
-                    rx = -gamepad1.right_stick_x * 0.5;
+                    rx = -gamepad1.right_stick_x * 0.8;
                 } else {
                     rx = 0;
                 }
@@ -137,13 +139,13 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
                 double frontRightPower = (rotY - rotX - rx) / denominator;
                 double backRightPower = (rotY + rotX - rx) / denominator;
 
-                motorFrontLeft.setPower(frontLeftPower);
-                motorBackLeft.setPower(backLeftPower);
-                motorFrontRight.setPower(frontRightPower);
-                motorBackRight.setPower(backRightPower);
+                motorFrontLeft.setPower(frontLeftPower * FRICTION_COMPENSATION);
+                motorBackLeft.setPower(backLeftPower * FRICTION_COMPENSATION);
+                motorFrontRight.setPower(frontRightPower * FRICTION_COMPENSATION);
+                motorBackRight.setPower(backRightPower * FRICTION_COMPENSATION);
 
                 //Pince pilot (gamepad1)
-                if (gamepad1.right_trigger>0.5) {
+                if (gamepad1.right_trigger > 0.5) {
                     if (!isPressed_a) {
                         pinceState = !pinceState;
                         isPressed_a = true;
@@ -152,67 +154,67 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
                         pince.setPosition(1);
                         pattern = RevBlinkinLedDriver.BlinkinPattern.BLUE_GREEN;
                     } else {
-                        pince.setPosition(0.7);
+                        pince.setPosition(0.67);
                         pattern = RevBlinkinLedDriver.BlinkinPattern.GREEN;
                     }
                 } else {
                     isPressed_a = false;
 
-                //Elevator copilot(gamepad2)
-                Gamepad PlayerWithElevator = gamepad2; // CHANGE THIS TO CONTROLLING PLAYER
+                    //Elevator copilot(gamepad2)
+                    Gamepad PlayerWithElevator = gamepad2; // CHANGE THIS TO CONTROLLING PLAYER
 
-                if (PlayerWithElevator.y) {
-                    elevatorPOS = 0;
-                    pattern = RevBlinkinLedDriver.BlinkinPattern.HEARTBEAT_RED;
-                }
-                if (PlayerWithElevator.x) {
-                    elevatorPOS = maximumHeight; // CHECK CONSTANT
-                }
-
-                if ((PlayerWithElevator.dpad_up || PlayerWithElevator.dpad_down)
-                        ||
-                        ((Math.abs(PlayerWithElevator.right_trigger) > .1) || (Math.abs(PlayerWithElevator.left_trigger) > .1)) // DEADZONE CHANGE (.1)
-                ) {
-
-                    if ((Math.abs(PlayerWithElevator.right_trigger) > .1) && (elevator.getTargetPosition() < maximumHeight)) {
-
-                        elevatorPOS += elevatorSpeed * Math.abs(PlayerWithElevator.right_trigger) * 3; // CHANGE (3) TO ACCELERATE ELEVATOR SPEED
-
-                    } else if ((Math.abs(PlayerWithElevator.left_trigger) > .1) && (elevator.getTargetPosition() > 0)) {
-
-                        elevatorPOS -= elevatorSpeed * Math.abs(PlayerWithElevator.left_trigger) * 3;
-
-
-                    } else if (PlayerWithElevator.dpad_up && (elevator.getTargetPosition() < maximumHeight)) { // REMOVE IF NOT USED BY PILOTS
-                        double dxSpeed = 0;
-
-                        if (pinceState) {
-                            dxSpeed = 200;
-                        }
-                        elevatorPOS += elevatorSpeed + Math.abs(dxSpeed);
-
-                    } else if (PlayerWithElevator.dpad_down && (elevator.getTargetPosition() > 0)) {
-
-                        double dxSpeed = 0;
-
-                        if (pinceState) {
-                            dxSpeed = 200;
-                        }
-                        elevatorPOS -= elevatorSpeed + Math.abs(dxSpeed);
+                    if (PlayerWithElevator.y) {
+                        elevatorPOS = 0;
+                        pattern = RevBlinkinLedDriver.BlinkinPattern.HEARTBEAT_RED;
                     }
-                } else {
-                    elevatorPOS = elevator.getCurrentPosition();
+                    if (PlayerWithElevator.x) {
+                        elevatorPOS = maximumHeight; // CHECK CONSTANT
+                    }
+
+                    if ((PlayerWithElevator.dpad_up || PlayerWithElevator.dpad_down)
+                            ||
+                            ((Math.abs(PlayerWithElevator.right_trigger) > .1) || (Math.abs(PlayerWithElevator.left_trigger) > .1)) // DEADZONE CHANGE (.1)
+                    ) {
+
+                        if ((Math.abs(PlayerWithElevator.right_trigger) > .1) && (elevator.getTargetPosition() < maximumHeight)) {
+
+                            elevatorPOS += elevatorSpeed * Math.abs(PlayerWithElevator.right_trigger) * 3; // CHANGE (3) TO ACCELERATE ELEVATOR SPEED
+
+                        } else if ((Math.abs(PlayerWithElevator.left_trigger) > .1) && (elevator.getTargetPosition() > 0)) {
+
+                            elevatorPOS -= elevatorSpeed * Math.abs(PlayerWithElevator.left_trigger) * 3;
+
+
+                        } else if (PlayerWithElevator.dpad_up && (elevator.getTargetPosition() < maximumHeight)) { // REMOVE IF NOT USED BY PILOTS
+                            double dxSpeed = 0;
+
+                            if (pinceState) {
+                                dxSpeed = 200;
+                            }
+                            elevatorPOS += elevatorSpeed + Math.abs(dxSpeed);
+
+                        } else if (PlayerWithElevator.dpad_down && (elevator.getTargetPosition() > 0)) {
+
+                            double dxSpeed = 0;
+
+                            if (pinceState) {
+                                dxSpeed = 200;
+                            }
+                            elevatorPOS -= elevatorSpeed + Math.abs(dxSpeed);
+                        }
+                    } else {
+                        elevatorPOS = elevator.getCurrentPosition();
+                    }
+
+                    elevator.setTargetPosition(elevatorPOS);
+
+                    telemetry.addData("ElevatorPOS", elevatorPOS);
+                    telemetry.addData("CurrentPOS", elevator.getCurrentPosition());
+
+                    light.setPattern(pattern);
+                    telemetry.update();
                 }
-
-                elevator.setTargetPosition(elevatorPOS);
-
-                telemetry.addData("ElevatorPOS", elevatorPOS);
-                telemetry.addData("CurrentPOS", elevator.getCurrentPosition());
-
-                light.setPattern(pattern);
-                telemetry.update();
             }
         }
     }
-}
 }
