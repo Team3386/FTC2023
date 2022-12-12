@@ -119,7 +119,6 @@ public class AUTONOMOUS_2 extends LinearOpMode {
 
         String detectedImage = "none lmao";
 
-
         //------------------------------------------ C O D E -------------------------------------//
 
 
@@ -137,11 +136,13 @@ public class AUTONOMOUS_2 extends LinearOpMode {
             //Take back cone
             cmd_setElevatorPOS(0, 1);
             cmd_pinceClose();
-            cmd_setElevatorPOS(500, 0.5);
+            cmd_setElevatorPOS(0, 0.5);
 
             //NEW
-            cmd_move(0,0.26,0,2.5);
+            cmd_move(0,0.30,0,2.6);
             cmd_visionPosition(detectedImage);
+            cmd_pinceOpen();
+
 
             //requestOpModeStop();
         }
@@ -269,10 +270,10 @@ public class AUTONOMOUS_2 extends LinearOpMode {
     }
 
     public void cmd_visionPosition(String label) {
-        if (label == "3 Panel") {
-            cmd_move(0.5,0,0,1.5);
-        }else if (label == "1 Bolt") {
-            cmd_move(-0.5,0,0,1.5);
+        if (label == "1 Bolt") {
+            cmd_move(-0.5,0,0,1.8);
+        }else if (label == "3 Panel") {
+            cmd_move(0.5,0,0,1.8);
         } else if (label == "2 Bulb"){
             return;
         } else{
