@@ -8,25 +8,46 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.HardwareDevice;
+import com.qualcomm.robotcore.hardware.I2cAddr;
+import com.qualcomm.robotcore.hardware.I2cAddrConfig;
+import com.qualcomm.robotcore.hardware.I2cDevice;
+import com.qualcomm.robotcore.hardware.I2cDeviceSynch;
+import com.qualcomm.robotcore.hardware.I2cDeviceSynchDevice;
+import com.qualcomm.robotcore.hardware.I2cDeviceSynchSimple;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.configuration.I2cSensor;
+import com.qualcomm.robotcore.hardware.configuration.annotations.DeviceProperties;
+import com.qualcomm.robotcore.hardware.configuration.annotations.I2cDeviceType;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.TypeConversion;
+
+import org.firstinspires.ftc.robotcontroller.external.samples.SensorDigitalTouch;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import java.sql.Time;
 
 import java.sql.Timestamp;
+import java.util.Locale;
 
 @TeleOp(name = "FTC-2023 1.2")
 public class FieldCentricMecanumTeleOp extends LinearOpMode {
 
     // LEDs runs when OP mode is selected
+
+
     private RevBlinkinLedDriver light;
     RevBlinkinLedDriver.BlinkinPattern pattern;
+    DigitalChannel sonarTrig, sonarEcho;
     private ElapsedTime runtime = new ElapsedTime();
+    private ElapsedTime sonarTime = new ElapsedTime();
     static final double FORWARD_SPEED = 0.6;
     static final double TURN_SPEED = 0.5;
     static final double FRICTION_COMPENSATION = 1; // 1.2  ( 120%  MAX POWER )
 
+  // AdafruitEncoder elevatorEncoder;
     @Override
     public void runOpMode() throws InterruptedException {
         // Declare our motors
@@ -35,17 +56,21 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
         DcMotor motorFrontLeft = hardwareMap.dcMotor.get("leftFront");
         DcMotor motorFrontRight = hardwareMap.dcMotor.get("rightFront");
         DcMotor motorBackRight = hardwareMap.dcMotor.get("rightBack");
+        sonarTrig = hardwareMap.digitalChannel.get("sonarTrig");
+        sonarEcho = hardwareMap.digitalChannel.get("sonarEcho");
+        sonarTrig.setMode(DigitalChannel.Mode.OUTPUT);
+        sonarEcho.setMode(DigitalChannel.Mode.INPUT);
 
         DcMotor elevator = hardwareMap.dcMotor.get("elevator");
 
         // CONSTANTS
         int elevatorPOS = 0;
-        int elevatorSpeed = 180; //120;
+        int elevatorSpeed = 400;//180; //120;
         double deadZone = 0.01;
         int coElevatorSpeed = 80;
 
 
-        int maximumHeight = 4600;
+        int maximumHeight = 4500;
 
         Servo pince = hardwareMap.servo.get("pince");
         boolean pinceState = true;
@@ -79,6 +104,7 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
         parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
         // Without this, data retrieving from the IMU throws an exception
         //imu.initialize(parameters);
+        //elevatorEncoder = hardwareMap.get(elevatorEncoder.class, "imu");
 
 
         waitForStart();
@@ -88,7 +114,9 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
 
         if (opModeIsActive()) {
             elevator.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            elevator.setPower(0.7);
+            elevator.setPower(1.0);
+
+
 
             // Alliance selection
             if (gamepad1.x) {
@@ -104,26 +132,33 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
             double rx = 0;
 
             while (opModeIsActive()) {
+
+               // double lol = elevatorEncoder.getEncoderPosition();
+             //   telemetry.addData("encoder value",lol);
+
                 // Joystick
                 if (Math.abs(gamepad1.left_stick_y) > deadZone) {
-                    y = gamepad1.left_stick_y * 0.8;// Remember, this is reversed!
+                    y = gamepad1.left_stick_y * 1.2;// Remember, this is reversed!
                 } else {
                     y = 0;
                 }
 
                 if (Math.abs(gamepad1.left_stick_x) > deadZone) {
-                    x = -gamepad1.left_stick_x * 0.8; // Counteract imperfect strafing
+                    x = -gamepad1.left_stick_x * 1.2; // Counteract imperfect strafing
                 } else {
                     x = 0;
                 }
 
                 if (Math.abs(gamepad1.right_stick_x) > deadZone) {
-                    rx = -gamepad1.right_stick_x * 0.8;
+                    rx = -gamepad1.right_stick_x * 1.2;
                 } else {
                     rx = 0;
                 }
 
-
+                // double distance = getDistance(.1);
+                //   telemetry.addData("Distance Sonar", distance);
+                //  telemetry.addData("SonarEcho", sonarEcho.getState());
+                //  telemetry.addData("SonarTrig", sonarTrig.getState());
                 // Read inverse IMU heading, as the IMU heading is CW positive
                 double botHeading = -imu.getAngularOrientation().firstAngle;
 
@@ -145,7 +180,7 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
                 motorBackRight.setPower(backRightPower * FRICTION_COMPENSATION);
 
                 //Pince pilot (gamepad1)
-                if (gamepad1.right_trigger > 0.5) {
+                if (gamepad1.a) {
                     if (!isPressed_a) {
                         pinceState = !pinceState;
                         isPressed_a = true;
@@ -208,13 +243,45 @@ public class FieldCentricMecanumTeleOp extends LinearOpMode {
 
                     elevator.setTargetPosition(elevatorPOS);
 
-                    telemetry.addData("ElevatorPOS", elevatorPOS);
-                    telemetry.addData("CurrentPOS", elevator.getCurrentPosition());
+                    //   telemetry.addData("ElevatorPOS", elevatorPOS);
+                    //  telemetry.addData("CurrentPOS", elevator.getCurrentPosition());
 
                     light.setPattern(pattern);
-                    telemetry.update();
+                    // telemetry.update();
                 }
             }
         }
+    }
+
+    public double getDistance(double maxDuration) {
+
+        double duration = 0;
+
+        sonarTrig.setState(false);
+        sleep((long) 0.02);
+        sonarTrig.setState(true);
+        sleep((long) 0.10);
+        sonarTrig.setState(false);
+        sonarTime.reset();
+
+
+//System.nanoTime();
+
+        while (sonarTrig.getState() == false && sonarTime.time() < maxDuration) {
+
+        }
+
+
+        while (sonarTrig.getState() == true && sonarTime.time() < maxDuration) {
+
+        }
+        duration = sonarTime.time();
+
+        // telemetry.addData("SonartTime", duration);
+
+        if (duration == maxDuration) {
+            return 0;
+        }
+        return duration * 0.034 / 2;
     }
 }

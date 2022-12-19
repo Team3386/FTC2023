@@ -101,7 +101,7 @@ public class AUTONOMOUS_2 extends LinearOpMode {
                 0, // firstAngle
                 90, // secondAngle
                 90, // thirdAngle
-                true); // useCompetitionFieldTargetLocations
+                true); // useCompetitionFieldTargetLocations<
         tfod.useDefaultModel();
         // Set min confidence threshold to 0.7
         tfod.initialize(vuforiaPOWERPLAY, (float) 0.7, true, true);
