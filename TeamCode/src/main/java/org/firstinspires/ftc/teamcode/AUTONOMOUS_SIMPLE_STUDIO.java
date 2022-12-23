@@ -20,8 +20,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.Tfod;
 
-@Autonomous(name = "AUTONOMOUS 1 STUDIO", preselectTeleOp = "FTC-2023 1.2")
-public class AUTONOMOUS_1 extends LinearOpMode {
+@Autonomous(name = "AUTONOMOUS SIMPLE STUDIO", preselectTeleOp = "FTC-2023 1.2")
+public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
     private VuforiaCurrentGame vuforiaPOWERPLAY; // vision init.
     private Tfod tfod;
 
@@ -141,7 +141,7 @@ public class AUTONOMOUS_1 extends LinearOpMode {
             cmd_setElevatorPOS(0, 0.5);
 
             //NEW
-            cmd_move(0,0.30,0,2.6);
+            cmd_move(0,0.30,0,3);
 
             cmd_visionPosition(detectedImage);
             cmd_pinceOpen();

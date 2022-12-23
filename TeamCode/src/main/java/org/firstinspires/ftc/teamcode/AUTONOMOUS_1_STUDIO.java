@@ -5,28 +5,40 @@ import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
-import java.util.List;
 
 import org.firstinspires.ftc.robotcore.external.JavaUtil;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaCurrentGame;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+
 import org.firstinspires.ftc.robotcore.external.tfod.Tfod;
 
-@Autonomous(name = "AUTONOMOUS 2 STUDIO", preselectTeleOp = "FTC-2023 1.2")
-public class AUTONOMOUS_2 extends LinearOpMode {
-    private VuforiaCurrentGame vuforiaPOWERPLAY;
+import java.util.List;
+
+@Autonomous(name = "AUTONOMOUS 1 STUDIO", preselectTeleOp = "FTC-2023 1.2")
+public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
+    private VuforiaCurrentGame vuforiaPOWERPLAY; // vision init.
     private Tfod tfod;
+/*    private static final String TFOD_MODEL_FILE  = "/sdcard/FIRST/tflitemodels/SignalSleeve2.0.tflite";
+    private static final String[] LABELS = {
+            "Kirby",
+            "Soda",
+            "Steve"
+    };*/
+
 
     Recognition recognition;
     private ElapsedTime timer = new ElapsedTime();
+
     // Pince
     Servo pince;
 
@@ -41,10 +53,14 @@ public class AUTONOMOUS_2 extends LinearOpMode {
 
     BNO055IMU imu;
 
+
     // LEDs runs when OP mode is selected
     RevBlinkinLedDriver light;
     RevBlinkinLedDriver.BlinkinPattern pattern;
-    //
+
+    //Sensor
+    ColorSensor colorrev;
+    DistanceSensor distrev;
 
     /**
      * This function is executed when this Op Mode is selected from the Driver Station.
@@ -82,9 +98,13 @@ public class AUTONOMOUS_2 extends LinearOpMode {
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
         imu.initialize(parameters);
+        double botHeading = -imu.getAngularOrientation().firstAngle;
 
         vuforiaPOWERPLAY = new VuforiaCurrentGame();
         tfod = new Tfod();
+
+        colorrev = hardwareMap.get(ColorSensor.class, "colorrev"); // INIT SENSOR
+        distrev = hardwareMap.get(DistanceSensor.class,"2mrev");
 
         // Sample TFOD Op Mode
         // Initialize Vuforia.
@@ -104,6 +124,7 @@ public class AUTONOMOUS_2 extends LinearOpMode {
                 true); // useCompetitionFieldTargetLocations
         tfod.useDefaultModel();
         // Set min confidence threshold to 0.7
+        //tfod.useModelFromFile(TFOD_MODEL_FILE,LABELS);
         tfod.initialize(vuforiaPOWERPLAY, (float) 0.7, true, true);
         // Initialize TFOD before waitForStart.
         // Activate TFOD here so the object detection labels are visible
@@ -119,13 +140,13 @@ public class AUTONOMOUS_2 extends LinearOpMode {
 
         String detectedImage = "none lmao";
 
+
         //------------------------------------------ C O D E -------------------------------------//
 
 
         if (opModeIsActive()) {
             // Put run blocks here.
 
-            //Image detected
             cmd_pinceOpen();
             cmd_setElevatorPOS(900, 1);
             detectedImage = coneDetection();
@@ -133,18 +154,63 @@ public class AUTONOMOUS_2 extends LinearOpMode {
             telemetry.update();
             sleep(100);
 
-            //Take back cone
-            cmd_setElevatorPOS(0, 1);
-            cmd_pinceClose();
-            cmd_setElevatorPOS(0, 0.5);
 
-            //NEW
-            cmd_move(0,0.30,0,2.6);
-            cmd_visionPosition(detectedImage);
+            //Take back cone
+            cmd_setElevatorPOS(0, 0.5);
+            //requestOpModeStop();
+            cmd_pinceClose();
+            cmd_setElevatorPOS(4600, 0.5);
+
+            //MOVE
+            resetRuntime();
+            while (distrev.getDistance(DistanceUnit.CM) > 30) {
+                cmd_move(0, 0.4, 0, -1);
+                if (getRuntime() > 2.5) {
+                    cmd_move(0,0,0,0);
+                    cmd_setElevatorPOS(0,1);
+                    cmd_visionPosition(detectedImage);
+                    cmd_pinceOpen();
+                    requestOpModeStop();
+                    break; // FAILSAFE
+                }
+            }
+
+            cmd_move(0, 0.3, 0, 0.5);
+
+            resetRuntime();
+            while (distrev.getDistance(DistanceUnit.CM) > 30) {
+                cmd_move(0, 0.3, 0, -1);
+                if (getRuntime() > 5) break;//           FAILSAFE
+
+            }
+            cmd_move(0,0,0,1);
+
+            resetRuntime();
+            while (botHeading < 1.55){
+                botHeading = -imu.getAngularOrientation().firstAngle;
+                cmd_move(0,0,0.25,-1);
+                telemetry.addData("Angle",botHeading);
+                telemetry.update();
+                if (getRuntime() > 3) break;//                  FAILSAFE
+
+            }
+            // END OF TURN
+            resetRuntime();
+            while (((DistanceSensor)colorrev).getDistance(DistanceUnit.CM) > 7) {
+                cmd_move(0.25, 0, 0, -1);
+                if (getRuntime() > 2) break;//      FAILSAFE
+
+            }
+            cmd_move(0,0,0,0);
             cmd_pinceOpen();
 
+            //CODE FOR PARKING
+            cmd_move(-0.3,0,0,1.1);
+            cmd_move(0,-0.3,0,2);
+            cmd_visionPosition(detectedImage);
+            cmd_setElevatorPOS(0,5);
 
-            //requestOpModeStop();
+            requestOpModeStop();
         }
         // Deactivate TFOD.
         tfod.deactivate();
@@ -155,9 +221,6 @@ public class AUTONOMOUS_2 extends LinearOpMode {
 
 
     //-------------------------------------- C O D E   E N D -------------------------------------//
-
-
-
 
     public void cmd_pinceClose() {
         pince.setPosition(0.7);
@@ -212,7 +275,7 @@ public class AUTONOMOUS_2 extends LinearOpMode {
     }
 
     public void cmd_move(double x, double y, double rx, double time) {
-        resetRuntime();
+        //resetRuntime();
 
         // Read inverse IMU heading, as the IMU heading is CW positive
         double botHeading = -imu.getAngularOrientation().firstAngle;
@@ -232,17 +295,24 @@ public class AUTONOMOUS_2 extends LinearOpMode {
         double frontRightPower = (rotY - rotX - rx) / denominator;
         double backRightPower = (rotY + rotX - rx) / denominator;
 
-        while (getRuntime() < time) {
+        if (time <= -1) {
             motorFrontLeft.setPower(frontLeftPower);
             motorBackLeft.setPower(backLeftPower);
             motorFrontRight.setPower(frontRightPower);
             motorBackRight.setPower(backRightPower);
+        } else {
+            resetRuntime();
+            while (getRuntime() < time) {
+                motorFrontLeft.setPower(frontLeftPower);
+                motorBackLeft.setPower(backLeftPower);
+                motorFrontRight.setPower(frontRightPower);
+                motorBackRight.setPower(backRightPower);
+            }
+            motorFrontLeft.setPower(0);
+            motorBackLeft.setPower(0);
+            motorFrontRight.setPower(0);
+            motorBackRight.setPower(0);
         }
-        motorFrontLeft.setPower(0);
-        motorBackLeft.setPower(0);
-        motorFrontRight.setPower(0);
-        motorBackRight.setPower(0);
-
     }
 
     /**
@@ -270,13 +340,13 @@ public class AUTONOMOUS_2 extends LinearOpMode {
     }
 
     public void cmd_visionPosition(String label) {
-        if (label == "1 Bolt") {
-            cmd_move(-0.5,0,0,1.8);
-        }else if (label == "3 Panel") {
-            cmd_move(0.5,0,0,1.8);
-        } else if (label == "2 Bulb"){
+        if ((label == "1 Bolt") || (label == "Kirby")) {
+            cmd_move(-0.5, 0, 0, 1.8);
+        } else if ((label == "3 Panel") || (label == "Steve")){
+            cmd_move(0.5, 0, 0, 1.8);
+        } else if ((label == "2 Bulb") || (label == "Soda")){
             return;
-        } else{
+        } else {
         }
     }
 }
