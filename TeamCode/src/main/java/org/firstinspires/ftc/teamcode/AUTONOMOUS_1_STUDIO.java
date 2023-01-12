@@ -9,6 +9,8 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -60,7 +62,10 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
 
     //Sensor
     ColorSensor colorrev;
+    ColorSensor colorrev2;
     DistanceSensor distrev;
+
+    Boolean lookForColor = false;
 
     /**
      * This function is executed when this Op Mode is selected from the Driver Station.
@@ -104,7 +109,8 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
         tfod = new Tfod();
 
         colorrev = hardwareMap.get(ColorSensor.class, "colorrev"); // INIT SENSOR
-        distrev = hardwareMap.get(DistanceSensor.class,"2mrev");
+        colorrev2 = hardwareMap.get(ColorSensor.class, "colorrev2");
+        distrev = hardwareMap.get(DistanceSensor.class, "2mrev");
 
         // Sample TFOD Op Mode
         // Initialize Vuforia.
@@ -150,7 +156,7 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
             cmd_pinceOpen();
             cmd_setElevatorPOS(900, 1);
             detectedImage = coneDetection();
-            telemetry.addData("LABEL",detectedImage);
+            telemetry.addData("LABEL", detectedImage);
             telemetry.update();
             sleep(100);
 
@@ -159,15 +165,15 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
             cmd_setElevatorPOS(0, 0.5);
             //requestOpModeStop();
             cmd_pinceClose();
-            cmd_setElevatorPOS(4600, 0.5);
+            cmd_setElevatorPOS(4600, 1);
 
             //MOVE
             resetRuntime();
             while (distrev.getDistance(DistanceUnit.CM) > 30) {
-                cmd_move(0, 0.4, 0, -1);
-                if (getRuntime() > 2.5) {
-                    cmd_move(0,0,0,0);
-                    cmd_setElevatorPOS(0,1);
+                cmd_move(0, 0.3, 0, -1);
+                if (getRuntime() > 5) {
+                    cmd_move(0, 0, 0, 0);
+                    cmd_setElevatorPOS(0, 1);
                     cmd_visionPosition(detectedImage);
                     cmd_pinceOpen();
                     requestOpModeStop();
@@ -179,36 +185,39 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
 
             resetRuntime();
             while (distrev.getDistance(DistanceUnit.CM) > 30) {
-                cmd_move(0, 0.3, 0, -1);
+                cmd_move(0, 0.2, 0, -1);
+                if (lookForColor) {
+                  detectedImage = coneDetectionColor();
+                }
                 if (getRuntime() > 5) break;//           FAILSAFE
 
             }
-            cmd_move(0,0,0,1);
+            cmd_move(0, 0, 0, 1);
 
             resetRuntime();
-            while (botHeading < 1.55){
+            while (botHeading < 1.55) {
                 botHeading = -imu.getAngularOrientation().firstAngle;
-                cmd_move(0,0,0.25,-1);
-                telemetry.addData("Angle",botHeading);
+                cmd_move(0, 0, 0.25, -1);
+                telemetry.addData("Angle", botHeading);
                 telemetry.update();
                 if (getRuntime() > 3) break;//                  FAILSAFE
 
             }
             // END OF TURN
             resetRuntime();
-            while (((DistanceSensor)colorrev).getDistance(DistanceUnit.CM) > 7) {
+            while (((DistanceSensor) colorrev).getDistance(DistanceUnit.CM) > 7) {
                 cmd_move(0.15, 0, 0, -1);
                 if (getRuntime() > 2) break; //      FAILSAFE
 
             }
-            cmd_move(0,0,0,0);
+            cmd_move(0, 0, 0, 0);
             cmd_pinceOpen();
 
             //CODE FOR PARKING
-            cmd_move(-0.3,0,0,1.1);
-            cmd_move(0,-0.3,0,2);
+            cmd_move(-0.3, 0, 0, 1.1);
+            cmd_move(0, -0.3, 0, 2);
             cmd_visionPosition(detectedImage);
-            cmd_setElevatorPOS(0,5);
+            cmd_setElevatorPOS(0, 5);
 
             requestOpModeStop();
         }
@@ -242,8 +251,35 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
 
     }
 
+    public String coneDetectionColor() {
+        NormalizedRGBA normalizedColors;
+        int color;
+        float hue;
+
+        normalizedColors = ((NormalizedColorSensor) colorrev2).getNormalizedColors();
+        color = normalizedColors.toColor();
+        hue = JavaUtil.colorToHue(color);
+
+        if(hue < 10){
+            lookForColor = true;
+        } else if (hue < 90){
+            cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.RED);
+            lookForColor = false;
+            return "RED";
+        } else if (hue < 175){
+            cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+            lookForColor = false;
+            return "GREEN";
+        } else if (hue < 275){
+            cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.BLUE);
+            lookForColor = false;
+            return "BLUE";
+        } else {}
+    return "none lmao";
+    }
+
     public String coneDetection() {
-        cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.RED);
+        cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.WHITE);
         List<Recognition> recognitions;
         int index;
 
@@ -255,6 +291,7 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
             // If list is empty, inform the user. Otherwise, go
             // through list and display info for each recognition.
             if (JavaUtil.listLength(recognitions) == 0) {
+                lookForColor = true;
                 //  telemetry.addData("TFOD", "No items detected.");
 
             } else {
@@ -267,7 +304,8 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
                     displayInfo(index);
                     // Increment index.
                     index = index + 1;
-                    cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+                    cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.HEARTBEAT_WHITE);
+                    lookForColor = false;
                     return recognition.getLabel();
                 }
             }
@@ -316,9 +354,6 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
         }
     }
 
-    /**
-     * Display info (using telemetry) for a recognized object.
-     */
     private void displayInfo(int i) {
         // Display label info.
         // Display the label and index number for the recognition.
@@ -341,11 +376,11 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
     }
 
     public void cmd_visionPosition(String label) {
-        if ((label == "1 Bolt") || (label == "Kirby")) {
+        if ((label == "1 Bolt") || (label == "GREEN")) {
             cmd_move(-0.5, 0, 0, 1.8);
-        } else if ((label == "3 Panel") || (label == "Steve")){
+        } else if ((label == "3 Panel") || (label == "BLUE")) {
             cmd_move(0.5, 0, 0, 1.8);
-        } else if ((label == "2 Bulb") || (label == "Soda")){
+        } else if ((label == "2 Bulb") || (label == "RED")) {
             return;
         } else {
         }
