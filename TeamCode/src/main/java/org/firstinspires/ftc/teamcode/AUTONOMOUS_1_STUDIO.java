@@ -192,6 +192,7 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
                 if (getRuntime() > 5) break;//           FAILSAFE
 
             }
+
             cmd_move(0, 0, 0, 1);
 
             resetRuntime();
@@ -266,7 +267,7 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
             cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.RED);
             lookForColor = false;
             return "RED";
-        } else if (hue < 175){
+        } else if (hue < 210){
             cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.GREEN);
             lookForColor = false;
             return "GREEN";
