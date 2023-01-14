@@ -45,7 +45,7 @@ public class FTC_2023_TELEOP extends LinearOpMode {
         int coElevatorSpeed = 80;
 
 
-        int maximumHeight = 4600;
+        int maximumHeight = 5000;
 
         Servo pince = hardwareMap.servo.get("pince");
         boolean pinceState = true;
@@ -197,7 +197,7 @@ public class FTC_2023_TELEOP extends LinearOpMode {
 
                             double dxSpeed = 0;
 
-                            if (pinceState) {
+                            if (pinceState) { 
                                 dxSpeed = 200;
                             }
                             elevatorPOS -= elevatorSpeed + Math.abs(dxSpeed);

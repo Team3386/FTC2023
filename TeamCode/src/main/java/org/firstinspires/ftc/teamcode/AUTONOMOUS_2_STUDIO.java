@@ -165,7 +165,7 @@ public class AUTONOMOUS_2_STUDIO extends LinearOpMode {
             cmd_setElevatorPOS(0, 0.5);
             //requestOpModeStop();
             cmd_pinceClose();
-            cmd_setElevatorPOS(4600, 1);
+            cmd_setElevatorPOS(4800, 1);
 
             //MOVE
             resetRuntime();
@@ -198,7 +198,7 @@ public class AUTONOMOUS_2_STUDIO extends LinearOpMode {
             }
             // END OF TURN
             resetRuntime();
-            while (((DistanceSensor) colorrev).getDistance(DistanceUnit.CM) > 7) {
+            while (((DistanceSensor) colorrev).getDistance(DistanceUnit.CM) > 8.5) {
                 cmd_move(-0.25, 0, 0, -1);
                 if (getRuntime() > 2) break; //      FAILSAFE
 
@@ -225,7 +225,7 @@ public class AUTONOMOUS_2_STUDIO extends LinearOpMode {
     //-------------------------------------- C O D E   E N D -------------------------------------//
 
     public void cmd_pinceClose() {
-        pince.setPosition(0.7);
+        pince.setPosition(0.65);
         sleep(500);
     }
 
@@ -278,7 +278,7 @@ public class AUTONOMOUS_2_STUDIO extends LinearOpMode {
 
         resetRuntime();
 
-        while (getRuntime() < 5) {
+        while (getRuntime() < 2) {
             // Get a list of recognitions from TFOD.
             recognitions = tfod.getRecognitions();
             // If list is empty, inform the user. Otherwise, go
