@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.hardware.bosch.BNO055IMU;
@@ -12,12 +11,8 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import java.sql.Time;
-
-import java.sql.Timestamp;
-
-@TeleOp(name = "FTC-2023 1.2")
-public class FTC_2023_TELEOP extends LinearOpMode {
+@TeleOp(name = "FTC-2023 STUDIO")
+public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
 
     // LEDs runs when OP mode is selected
     private RevBlinkinLedDriver light;
@@ -26,6 +21,7 @@ public class FTC_2023_TELEOP extends LinearOpMode {
     static final double FORWARD_SPEED = 0.6;
     static final double TURN_SPEED = 0.5;
     static final double FRICTION_COMPENSATION = 1; // 1.2  ( 120%  MAX POWER )
+    static final boolean ANALOG_HOLD = false;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -41,7 +37,7 @@ public class FTC_2023_TELEOP extends LinearOpMode {
         // CONSTANTS
         int elevatorPOS = 0;
         int elevatorSpeed = 180; //120;
-        double deadZone = 0.01;
+        double deadZone = 0.006;//0.01;
         int coElevatorSpeed = 80;
 
 
@@ -88,7 +84,7 @@ public class FTC_2023_TELEOP extends LinearOpMode {
 
         if (opModeIsActive()) {
             elevator.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            elevator.setPower(0.7);
+            elevator.setPower(0.9);
 
             // Alliance selection
             if (gamepad1.x) {
@@ -102,23 +98,32 @@ public class FTC_2023_TELEOP extends LinearOpMode {
             double x = 0;
             double y = 0;
             double rx = 0;
+            boolean boostMode = false;
+
+            int directionY = 0;
+            int directionX = 0;
+            int directionR = 0;
+
+            directionY = gamepad1.left_stick_y > 0 ? 1 : -1;
+            directionX = gamepad1.left_stick_x > 0 ? 1 : -1;
+
 
             while (opModeIsActive()) {
                 // Joystick
                 if (Math.abs(gamepad1.left_stick_y) > deadZone) {
-                    y = gamepad1.left_stick_y * 0.8;// Remember, this is reversed!
+                    y = .1 * directionY + gamepad1.left_stick_y * 0.8;// Remember, this is reversed!
                 } else {
                     y = 0;
                 }
 
                 if (Math.abs(gamepad1.left_stick_x) > deadZone) {
-                    x = -gamepad1.left_stick_x * 0.8; // Counteract imperfect strafing
+                    x = -(.1 * directionX + gamepad1.left_stick_x * 0.8); // Counteract imperfect strafing
                 } else {
                     x = 0;
                 }
 
                 if (Math.abs(gamepad1.right_stick_x) > deadZone) {
-                    rx = -gamepad1.right_stick_x * 0.8;
+                    rx = -(gamepad1.right_stick_x * 1);
                 } else {
                     rx = 0;
                 }
@@ -138,82 +143,114 @@ public class FTC_2023_TELEOP extends LinearOpMode {
                 double backLeftPower = (rotY - rotX + rx) / denominator;
                 double frontRightPower = (rotY - rotX - rx) / denominator;
                 double backRightPower = (rotY + rotX - rx) / denominator;
+                double boostModifier = .9;
 
-                motorFrontLeft.setPower(frontLeftPower * FRICTION_COMPENSATION);
-                motorBackLeft.setPower(backLeftPower * FRICTION_COMPENSATION);
-                motorFrontRight.setPower(frontRightPower * FRICTION_COMPENSATION);
-                motorBackRight.setPower(backRightPower * FRICTION_COMPENSATION);
 
-                //Pince pilot (gamepad1)
-                if (gamepad1.right_trigger > 0.5) {
-                    if (!isPressed_a) {
-                        pinceState = !pinceState;
+                boostMode = gamepad1.left_bumper;
+                if (boostMode) {
+                    boostModifier = 1.2;
+                }
+                motorFrontLeft.setPower(frontLeftPower * FRICTION_COMPENSATION * boostModifier);
+                motorBackLeft.setPower(backLeftPower * FRICTION_COMPENSATION * boostModifier);
+                motorFrontRight.setPower(frontRightPower * FRICTION_COMPENSATION * boostModifier);
+                motorBackRight.setPower(backRightPower * FRICTION_COMPENSATION * boostModifier);
+
+// .13 ouvert
+// .30 close
+                double pincePosition = (1 - gamepad1.right_trigger);
+                if (ANALOG_HOLD) {
+
+                    if (pincePosition > .50) {
                         isPressed_a = true;
+                        pincePosition = .50;
+
                     }
-                    if (pinceState) {
-                        pince.setPosition(1);
-                        pattern = RevBlinkinLedDriver.BlinkinPattern.BLUE_GREEN;
-                    } else {
-                        pince.setPosition(0.67);
-                        pattern = RevBlinkinLedDriver.BlinkinPattern.GREEN;
+
+                    if (pincePosition < .13) {
+                        pincePosition = .13;
+                        isPressed_a = false;
                     }
                 } else {
-                    isPressed_a = false;
 
-                    //Elevator copilot(gamepad2)
-                    Gamepad PlayerWithElevator = gamepad2; // CHANGE THIS TO CONTROLLING PLAYER
-
-                    if (PlayerWithElevator.y) {
-                        elevatorPOS = 0;
-                        pattern = RevBlinkinLedDriver.BlinkinPattern.HEARTBEAT_RED;
-                    }
-                    if (PlayerWithElevator.x) {
-                        elevatorPOS = maximumHeight; // CHECK CONSTANT
-                    }
-
-                    if ((PlayerWithElevator.dpad_up || PlayerWithElevator.dpad_down)
-                            ||
-                            ((Math.abs(PlayerWithElevator.right_trigger) > .1) || (Math.abs(PlayerWithElevator.left_trigger) > .1)) // DEADZONE CHANGE (.1)
-                    ) {
-
-                        if ((Math.abs(PlayerWithElevator.right_trigger) > .1) && (elevator.getTargetPosition() < maximumHeight)) {
-
-                            elevatorPOS += elevatorSpeed * Math.abs(PlayerWithElevator.right_trigger) * 3; // CHANGE (3) TO ACCELERATE ELEVATOR SPEED
-
-                        } else if ((Math.abs(PlayerWithElevator.left_trigger) > .1) && (elevator.getTargetPosition() > 0)) {
-
-                            elevatorPOS -= elevatorSpeed * Math.abs(PlayerWithElevator.left_trigger) * 3;
-
-
-                        } else if (PlayerWithElevator.dpad_up && (elevator.getTargetPosition() < maximumHeight)) { // REMOVE IF NOT USED BY PILOTS
-                            double dxSpeed = 0;
-
-                            if (pinceState) {
-                                dxSpeed = 200;
-                            }
-                            elevatorPOS += elevatorSpeed + Math.abs(dxSpeed);
-
-                        } else if (PlayerWithElevator.dpad_down && (elevator.getTargetPosition() > 0)) {
-
-                            double dxSpeed = 0;
-
-                            if (pinceState) { 
-                                dxSpeed = 200;
-                            }
-                            elevatorPOS -= elevatorSpeed + Math.abs(dxSpeed);
+                    if (gamepad1.right_trigger > .3) {
+                        if (!isPressed_a) {
+                            pinceState = !pinceState;
+                            isPressed_a = true;
                         }
                     } else {
-                        elevatorPOS = elevator.getCurrentPosition();
+                        isPressed_a = false;
                     }
 
-                    elevator.setTargetPosition(elevatorPOS);
+                    if (pinceState) {
+                        pattern = RevBlinkinLedDriver.BlinkinPattern.BLUE_GREEN;
+                        pincePosition = .10;
+                    } else {
+                        pattern = RevBlinkinLedDriver.BlinkinPattern.GREEN;
+                        pincePosition = .50;
+                    }
 
-                    telemetry.addData("ElevatorPOS", elevatorPOS);
-                    telemetry.addData("CurrentPOS", elevator.getCurrentPosition());
-
-                    light.setPattern(pattern);
-                    telemetry.update();
                 }
+
+
+                pince.setPosition(pincePosition);
+
+                //Pince pilot (gamepad1)
+                //  isPressed_a = false;
+
+                //Elevator copilot(gamepad2)
+                Gamepad PlayerWithElevator = gamepad2; // CHANGE THIS TO CONTROLLING PLAYER
+
+                if (PlayerWithElevator.y) {
+                    elevatorPOS = 0;
+                    pattern = RevBlinkinLedDriver.BlinkinPattern.HEARTBEAT_RED;
+                }
+                if (PlayerWithElevator.x) {
+                    elevatorPOS = maximumHeight; // CHECK CONSTANT
+                }
+
+                if ((PlayerWithElevator.dpad_up || PlayerWithElevator.dpad_down)
+                        ||
+                        ((Math.abs(PlayerWithElevator.right_trigger) > .1) || (Math.abs(PlayerWithElevator.left_trigger) > .1)) // DEADZONE CHANGE (.1)
+                ) {
+
+                    if ((Math.abs(PlayerWithElevator.right_trigger) > .1) && (elevator.getTargetPosition() < maximumHeight)) {
+
+                        elevatorPOS += elevatorSpeed * Math.abs(PlayerWithElevator.right_trigger) * 3; // CHANGE (3) TO ACCELERATE ELEVATOR SPEED
+
+                    } else if ((Math.abs(PlayerWithElevator.left_trigger) > .1) && (elevator.getTargetPosition() > 0)) {
+
+                        elevatorPOS -= elevatorSpeed * Math.abs(PlayerWithElevator.left_trigger) * 3;
+
+
+                    } else if (PlayerWithElevator.dpad_up && (elevator.getTargetPosition() < maximumHeight)) { // REMOVE IF NOT USED BY PILOTS
+                        double dxSpeed = 0;
+
+                        if (pinceState) {
+                            dxSpeed = 200;
+                        }
+                        elevatorPOS += elevatorSpeed + Math.abs(dxSpeed);
+
+                    } else if (PlayerWithElevator.dpad_down && (elevator.getTargetPosition() > 0)) {
+
+                        double dxSpeed = 0;
+
+                        if (pinceState) {
+                            dxSpeed = 200;
+                        }
+                        elevatorPOS -= elevatorSpeed + Math.abs(dxSpeed);
+                    }
+                } else {
+                    elevatorPOS = elevator.getCurrentPosition();
+                }
+
+                elevator.setTargetPosition(elevatorPOS);
+
+
+                //   telemetry.addData("ElevatorPOS", elevatorPOS);
+                //   telemetry.addData("CurrentPOS", elevator.getCurrentPosition());
+
+                light.setPattern(pattern);
+                telemetry.update();
             }
         }
     }

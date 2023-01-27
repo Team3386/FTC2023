@@ -233,12 +233,12 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
     //-------------------------------------- C O D E   E N D -------------------------------------//
 
     public void cmd_pinceClose() {
-        pince.setPosition(0.65);
+        pince.setPosition(.13);
         sleep(500);
     }
 
     public void cmd_pinceOpen() {
-        pince.setPosition(1);
+        pince.setPosition(.5);
         sleep(500);
     }
 

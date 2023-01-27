@@ -162,15 +162,14 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
 
 
     public void cmd_pinceClose() {
-        pince.setPosition(0.7);
+        pince.setPosition(.13);
         sleep(500);
     }
 
     public void cmd_pinceOpen() {
-        pince.setPosition(1);
+        pince.setPosition(.50);
         sleep(500);
     }
-
     public void cmd_setElevatorPOS(int pos, double time) {
         pos = Math.min(Math.max(pos, 0), 4600);
         elevator.setTargetPosition(pos);
