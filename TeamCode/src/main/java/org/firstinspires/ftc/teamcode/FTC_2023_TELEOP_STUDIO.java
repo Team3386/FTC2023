@@ -155,7 +155,7 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
                 motorFrontRight.setPower(frontRightPower * FRICTION_COMPENSATION * boostModifier);
                 motorBackRight.setPower(backRightPower * FRICTION_COMPENSATION * boostModifier);
 
-// .13 ouvert
+// .13  ouvert
 // .30 close
                 double pincePosition = (1 - gamepad1.right_trigger);
                 if (ANALOG_HOLD) {
