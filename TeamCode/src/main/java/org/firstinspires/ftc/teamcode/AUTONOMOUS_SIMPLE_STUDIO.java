@@ -5,8 +5,12 @@ import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -22,10 +26,7 @@ import org.firstinspires.ftc.robotcore.external.tfod.Tfod;
 
 @Autonomous(name = "AUTONOMOUS SIMPLE STUDIO", preselectTeleOp = "FTC-2023 1.2")
 public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
-    private VuforiaCurrentGame vuforiaPOWERPLAY; // vision init.
-    private Tfod tfod;
 
-    Recognition recognition;
     private ElapsedTime timer = new ElapsedTime();
 
     // Pince
@@ -45,7 +46,13 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
     // LEDs runs when OP mode is selected
     RevBlinkinLedDriver light;
     RevBlinkinLedDriver.BlinkinPattern pattern;
-    //
+
+    //Sensor
+    ColorSensor colorrev;
+    ColorSensor colorrev2;
+    DistanceSensor distrev;
+
+    Boolean lookForColor = true;
 
     /**
      * This function is executed when this Op Mode is selected from the Driver Station.
@@ -83,35 +90,12 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
         imu.initialize(parameters);
+        double botHeading = -imu.getAngularOrientation().firstAngle;
 
-        vuforiaPOWERPLAY = new VuforiaCurrentGame();
-        tfod = new Tfod();
+        colorrev = hardwareMap.get(ColorSensor.class, "colorrev"); // INIT SENSOR
+        colorrev2 = hardwareMap.get(ColorSensor.class, "colorrev2");
+        distrev = hardwareMap.get(DistanceSensor.class, "2mrev");
 
-        // Sample TFOD Op Mode
-        // Initialize Vuforia.
-        vuforiaPOWERPLAY.initialize("", // vuforiaLicenseKey
-                hardwareMap.get(WebcamName.class, "webcam"), // cameraName
-                "", // webcamCalibrationFilename
-                false, // useExtendedTracking
-                false, // enableCameraMonitoring
-                VuforiaLocalizer.Parameters.CameraMonitorFeedback.NONE, // cameraMonitorFeedback
-                0, // dx
-                0, // dy
-                0, // dz
-                AxesOrder.XYZ, // axesOrder
-                0, // firstAngle
-                90, // secondAngle
-                90, // thirdAngle
-                true); // useCompetitionFieldTargetLocations
-        tfod.useDefaultModel();
-        // Set min confidence threshold to 0.7
-        tfod.initialize(vuforiaPOWERPLAY, (float) 0.7, true, true);
-        // Initialize TFOD before waitForStart.
-        // Activate TFOD here so the object detection labels are visible
-        // in the Camera Stream preview window on the Driver Station.
-        tfod.activate();
-        // Enable following block to zoom in on target.
-        tfod.setZoom(2, 16.0 / 9.0);
         telemetry.addData("DS preview on/off", "3 dots, Camera Stream");
         telemetry.addData(">", "Press Play to start");
         telemetry.update();
@@ -119,6 +103,7 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
         waitForStart();
 
         String detectedImage = "none lmao";
+
 
         //------------------------------------------ C O D E -------------------------------------//
 
@@ -128,31 +113,34 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
 
             //Image detected
             cmd_pinceOpen();
-            cmd_setElevatorPOS(900, 1);
-            detectedImage = coneDetection();
-            telemetry.addData("LABEL",detectedImage);
-            telemetry.update();
-            sleep(100);
+
 
 
             //Take back cone
-            cmd_setElevatorPOS(0, 1);
+            cmd_setElevatorPOS(0, 0);
             cmd_pinceClose();
-            cmd_setElevatorPOS(0, 0.5);
+            cmd_setElevatorPOS(3000, 1);
 
             //NEW
-            cmd_move(0,0.30,0,3);
+            cmd_move(0,0.2,0,1.5);
+            resetRuntime();
+            while (getRuntime() < 3){
+                cmd_move(0, 0.4, 0, -1);
+                if (lookForColor) {
+                    detectedImage = coneDetectionColor();
 
+                }else{
+                    break;
+                }
+            }
+
+            cmd_move(0,0,0,0);
             cmd_visionPosition(detectedImage);
+            cmd_setElevatorPOS(0,5);
             cmd_pinceOpen();
 
-            //requestOpModeStop();
+            requestOpModeStop();
         }
-        // Deactivate TFOD.
-        tfod.deactivate();
-
-        vuforiaPOWERPLAY.close();
-        tfod.close();
     }
 
 
@@ -162,14 +150,15 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
 
 
     public void cmd_pinceClose() {
-        pince.setPosition(.13);
+        pince.setPosition(.0);
         sleep(500);
     }
 
     public void cmd_pinceOpen() {
-        pince.setPosition(.50);
+        pince.setPosition(.3);
         sleep(500);
     }
+
     public void cmd_setElevatorPOS(int pos, double time) {
         pos = Math.min(Math.max(pos, 0), 4600);
         elevator.setTargetPosition(pos);
@@ -180,40 +169,36 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
 
     }
 
-    public String coneDetection() {
-        cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.RED);
-        List<Recognition> recognitions;
-        int index;
+    public String coneDetectionColor() {
+        NormalizedRGBA normalizedColors;
+        int color;
+        float hue;
 
-        resetRuntime();
+        normalizedColors = ((NormalizedColorSensor) colorrev2).getNormalizedColors();
+        color = normalizedColors.toColor();
+        hue = JavaUtil.colorToHue(color);
 
-        while (getRuntime() < 5) {
-            // Get a list of recognitions from TFOD.
-            recognitions = tfod.getRecognitions();
-            // If list is empty, inform the user. Otherwise, go
-            // through list and display info for each recognition.
-            if (JavaUtil.listLength(recognitions) == 0) {
-                //  telemetry.addData("TFOD", "No items detected.");
-            } else {
-                index = 0;
-                // Iterate through list and call a function to
-                // display info for each recognized object.
-                for (Recognition recognition_item : recognitions) {
-                    recognition = recognition_item;
-                    // Display info.
-                    displayInfo(index);
-                    // Increment index.
-                    index = index + 1;
-                    cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.GREEN);
-                    return recognition.getLabel();
-                }
-            }
+        if (hue < 10) {
+            lookForColor = true;
+        } else if (hue < 90) {
+            cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.RED);
+            lookForColor = false;
+            return "RED";
+        } else if (hue < 210) {
+            cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+            lookForColor = false;
+            return "GREEN";
+        } else if (hue < 275) {
+            cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.BLUE);
+            lookForColor = false;
+            return "BLUE";
+        } else {
         }
         return "none lmao";
     }
 
     public void cmd_move(double x, double y, double rx, double time) {
-        resetRuntime();
+        //resetRuntime();
 
         // Read inverse IMU heading, as the IMU heading is CW positive
         double botHeading = -imu.getAngularOrientation().firstAngle;
@@ -233,35 +218,24 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
         double frontRightPower = (rotY - rotX - rx) / denominator;
         double backRightPower = (rotY + rotX - rx) / denominator;
 
-        while (getRuntime() < time) {
+        if (time <= -1) {
             motorFrontLeft.setPower(frontLeftPower);
             motorBackLeft.setPower(backLeftPower);
             motorFrontRight.setPower(frontRightPower);
             motorBackRight.setPower(backRightPower);
+        } else {
+            resetRuntime();
+            while (getRuntime() < time) {
+                motorFrontLeft.setPower(frontLeftPower);
+                motorBackLeft.setPower(backLeftPower);
+                motorFrontRight.setPower(frontRightPower);
+                motorBackRight.setPower(backRightPower);
+            }
+            motorFrontLeft.setPower(0);
+            motorBackLeft.setPower(0);
+            motorFrontRight.setPower(0);
+            motorBackRight.setPower(0);
         }
-        motorFrontLeft.setPower(0);
-        motorBackLeft.setPower(0);
-        motorFrontRight.setPower(0);
-        motorBackRight.setPower(0);
-
-    }
-
-    /**
-     * Display info (using telemetry) for a recognized object.
-     */
-    private void displayInfo(int i) {
-        // Display label info.
-        // Display the label and index number for the recognition.
-        // telemetry.addData("label " + i, recognition.getLabel());
-        // telemetry.addData("yolo", 1);
-        // Display upper corner info.
-        // Display the location of the top left corner
-        // of the detection boundary for the recognition
-        // telemetry.addData("Left, Top " + i, Double.parseDouble(JavaUtil.formatNumber(recognition.getLeft(), 0)) + ", " + Double.parseDouble(JavaUtil.formatNumber(recognition.getTop(), 0)));
-        // Display lower corner info.
-        // Display the location of the bottom right corner
-        // of the detection boundary for the recognition
-        //  telemetry.addData("Right, Bottom " + i, Double.parseDouble(JavaUtil.formatNumber(recognition.getRight(), 0)) + ", " + Double.parseDouble(JavaUtil.formatNumber(recognition.getBottom(), 0)));
     }
 
     public void cmd_setLED(RevBlinkinLedDriver.BlinkinPattern color) {
@@ -271,11 +245,11 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
     }
 
     public void cmd_visionPosition(String label) {
-        if (label == "1 Bolt") {
+        if (label == "GREEN") {
             cmd_move(-0.5,0,0,1.8);
-        }else if (label == "3 Panel") {
+        }else if (label == "BLUE") {
             cmd_move(0.5,0,0,1.8);
-        } else if (label == "2 Bulb"){
+        } else if (label == "RED"){
             return;
         } else{
         }

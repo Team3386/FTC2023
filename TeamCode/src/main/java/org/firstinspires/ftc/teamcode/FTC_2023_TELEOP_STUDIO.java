@@ -1,3 +1,4 @@
+
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -11,12 +12,18 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+// Set the name that'll show up on the Rev Controller
 @TeleOp(name = "FTC-2023 STUDIO")
+
+// We extends LinearOpMode as it's a LinearOpMode
 public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
 
     // LEDs runs when OP mode is selected
     private RevBlinkinLedDriver light;
+
+    // Pattern
     RevBlinkinLedDriver.BlinkinPattern pattern;
+
     private ElapsedTime runtime = new ElapsedTime();
     static final double FORWARD_SPEED = 0.6;
     static final double TURN_SPEED = 0.5;
@@ -27,24 +34,26 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         // Declare our motors
         // Make sure your ID's match your configuration
+        // Motors for the wheels or the mouvement
+        // We are using a CRServo for motorBackLeft due to the number of DcMotor(4), motors in total(5)
         CRServo motorBackLeft = hardwareMap.crservo.get("leftBack");
         DcMotor motorFrontLeft = hardwareMap.dcMotor.get("leftFront");
         DcMotor motorFrontRight = hardwareMap.dcMotor.get("rightFront");
         DcMotor motorBackRight = hardwareMap.dcMotor.get("rightBack");
 
+        // DcMotor for the elevator
         DcMotor elevator = hardwareMap.dcMotor.get("elevator");
 
-        // CONSTANTS
-        int elevatorPOS = 0;
-        int elevatorSpeed = 180; //120;
-        double deadZone = 0.006;//0.01;
+        // Constants Used
+        int elevatorPOS = 0;  // Current
+        final int elevatorSpeed = 180; //120;
+        final double deadZone = 0.006;//0.01;
         int coElevatorSpeed = 80;
-
 
         int maximumHeight = 5000;
 
         Servo pince = hardwareMap.servo.get("pince");
-        boolean pinceState = true;
+        boolean pinceState = false;
         boolean isPressed_a = false;
 
         light = hardwareMap.get(RevBlinkinLedDriver.class, "light");
@@ -64,9 +73,9 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
         motorBackRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Elevator Configuration
-        elevator.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        elevator.setDirection(DcMotorSimple.Direction.REVERSE);
-        elevator.setTargetPosition(0);
+        elevator.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // ??
+        elevator.setDirection(DcMotorSimple.Direction.REVERSE); // ??  
+        elevator.setTargetPosition(0); // ??
 
         // Retrieve the IMU from the hardware map
         BNO055IMU imu = hardwareMap.get(BNO055IMU.class, "imu");
@@ -77,6 +86,7 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
         //imu.initialize(parameters);
 
 
+        // [  ---------------------------------------------------------- C O D E -------------------------------------------------------------  ] \\
         waitForStart();
         elevatorPOS = elevator.getCurrentPosition();
 
@@ -143,24 +153,28 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
                 double backLeftPower = (rotY - rotX + rx) / denominator;
                 double frontRightPower = (rotY - rotX - rx) / denominator;
                 double backRightPower = (rotY + rotX - rx) / denominator;
-                double boostModifier = .9;
+                double boostModifier = 1.2; //BOOST MODE REVERSED FOR NASSIM 4/12/2023 by Ghanais
 
 
-                boostMode = gamepad1.left_bumper;
+//                boostMode = gamepad1.left_bumper;
+
+                if ((gamepad1.left_trigger > .3) || (gamepad1.left_bumper)){ boostMode = true;}else{boostMode = false;} //FOR NASSIM CONVENIENCE BOOST 4/12/2023 by Ghanais
+
                 if (boostMode) {
-                    boostModifier = 1.2;
+                    boostModifier = 0.6;
                 }
                 motorFrontLeft.setPower(frontLeftPower * FRICTION_COMPENSATION * boostModifier);
                 motorBackLeft.setPower(backLeftPower * FRICTION_COMPENSATION * boostModifier);
                 motorFrontRight.setPower(frontRightPower * FRICTION_COMPENSATION * boostModifier);
                 motorBackRight.setPower(backRightPower * FRICTION_COMPENSATION * boostModifier);
 
-// .13  ouvert
-// .30 close
+// .0 ouvert
+// .3 close
                 double pincePosition = (1 - gamepad1.right_trigger);
+
                 if (ANALOG_HOLD) {
 
-                    if (pincePosition > .50) {
+                  /*  if (pincePosition > .50) {
                         isPressed_a = true;
                         pincePosition = .50;
 
@@ -169,7 +183,7 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
                     if (pincePosition < .13) {
                         pincePosition = .13;
                         isPressed_a = false;
-                    }
+                    }*/
                 } else {
 
                     if (gamepad1.right_trigger > .3) {
@@ -181,18 +195,21 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
                         isPressed_a = false;
                     }
 
+// OUVERT
                     if (pinceState) {
                         pattern = RevBlinkinLedDriver.BlinkinPattern.BLUE_GREEN;
-                        pincePosition = .10;
+                        pincePosition = .0;
                     } else {
                         pattern = RevBlinkinLedDriver.BlinkinPattern.GREEN;
-                        pincePosition = .50;
+                        pincePosition = .30;
                     }
 
                 }
 
-
+                telemetry.addData("Pince",pincePosition );
                 pince.setPosition(pincePosition);
+
+
 
                 //Pince pilot (gamepad1)
                 //  isPressed_a = false;
