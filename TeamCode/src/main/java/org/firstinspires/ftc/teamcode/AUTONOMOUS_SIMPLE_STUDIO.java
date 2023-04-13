@@ -13,6 +13,7 @@ import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import java.util.List;
 
@@ -51,6 +52,7 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
     ColorSensor colorrev;
     ColorSensor colorrev2;
     DistanceSensor distrev;
+    private VoltageSensor voltSensor;
 
     Boolean lookForColor = true;
 
@@ -95,6 +97,7 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
         colorrev = hardwareMap.get(ColorSensor.class, "colorrev"); // INIT SENSOR
         colorrev2 = hardwareMap.get(ColorSensor.class, "colorrev2");
         distrev = hardwareMap.get(DistanceSensor.class, "2mrev");
+        voltSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
 
         telemetry.addData("DS preview on/off", "3 dots, Camera Stream");
         telemetry.addData(">", "Press Play to start");
@@ -136,8 +139,9 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
 
             cmd_move(0,0,0,0);
             cmd_visionPosition(detectedImage);
+
             cmd_setElevatorPOS(0,5);
-            cmd_pinceOpen();
+            //cmd_pinceOpen();
 
             requestOpModeStop();
         }
@@ -197,13 +201,52 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
         return "none lmao";
     }
 
+
+    // Move the robot.
+    // x and y are the speed to apply to their respective local axis
+
     public void cmd_move(double x, double y, double rx, double time) {
         //resetRuntime();
 
         // Read inverse IMU heading, as the IMU heading is CW positive
         double botHeading = -imu.getAngularOrientation().firstAngle;
-        x = -x;
-        y = -y;
+        double maximumVoltage =  13.39; // Constant
+        double minimumVoltage = 10.0; // Constant
+        double currentVoltage = voltSensor.getVoltage(); // Current Voltage
+
+
+
+        // If the voltage is less than the minimumVoltage...
+        if(currentVoltage <= minimumVoltage){
+            // It mean there is an error
+            // Set the currentVoltage to maximum, so the ratio is always 1
+            // This make sure we do not divided by zero
+            currentVoltage = maximumVoltage;
+        }
+
+        // If the voltage is more than maximumVoltage....
+        if(currentVoltage >= maximumVoltage){
+            // it means we are over volt, or there is something cringe
+            // Therefore, we set the ratio to 1.00
+            currentVoltage = maximumVoltage;
+        }
+
+
+        // Ratio is MaximumVoltage / CurrentVoltage
+        // So if we have less voltage, we go further
+        double qualibration =  .85f;
+        double ratio = (maximumVoltage / currentVoltage) * ( qualibration);
+
+
+        telemetry.addData("Current Voltage", currentVoltage);
+        telemetry.addData("maximumVoltage", qualibration);
+        telemetry.addData("Current Ratio", ratio);
+        telemetry.addData("Qualibration", qualibration);
+
+        telemetry.update();
+
+        x = -x * ratio;
+        y = -y * ratio;
         rx = -rx;
 
         double rotX = x * Math.cos(botHeading) - y * Math.sin(botHeading);
@@ -236,6 +279,8 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
             motorFrontRight.setPower(0);
             motorBackRight.setPower(0);
         }
+
+
     }
 
     public void cmd_setLED(RevBlinkinLedDriver.BlinkinPattern color) {

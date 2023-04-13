@@ -158,7 +158,7 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
 
 //                boostMode = gamepad1.left_bumper;
 
-                if ((gamepad1.left_trigger > .3) || (gamepad1.left_bumper)){ boostMode = true;}else{boostMode = false;} //FOR NASSIM CONVENIENCE BOOST 4/12/2023 by Ghanais
+                if ((gamepad1.left_trigger > .3) || (gamepad1.left_bumper) || (gamepad1.right_bumper)){ boostMode = true;}else{boostMode = false;} //FOR NASSIM CONVENIENCE BOOST 4/12/2023 by Ghanais
 
                 if (boostMode) {
                     boostModifier = 0.6;
