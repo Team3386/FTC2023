@@ -14,20 +14,27 @@ import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import java.util.List;
-
 import org.firstinspires.ftc.robotcore.external.JavaUtil;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaCurrentGame;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
-import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
-import org.firstinspires.ftc.robotcore.external.tfod.Tfod;
+
 
 @Autonomous(name = "AUTONOMOUS SIMPLE STUDIO", preselectTeleOp = "FTC-2023 1.2")
 public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
 
     private ElapsedTime timer = new ElapsedTime();
+
+    static final int NULL_COLOR = 0;
+    static final int GREEN_COLOR = 1;
+    static final int RED_COLOR = 2;
+    static final int BLUE_COLOR = 3;
+
+    static final int ELEVATOR_CLEARANCE = 3000;
+    static final int ELEVATOR_MAX_POSITION = 4600;
+    static final int ELEVATOR_MIN_POSITION = 0;
+
+    static final int PAUSE_BETWEEN_PINCE = 500;
+    static final double PINCE_OPEN_POSITION = .30;
+    static final double PINCE_CLOSE_POSITION = .0;
+
 
     // Pince
     Servo pince;
@@ -90,53 +97,48 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
         imu.initialize(parameters);
-        double botHeading = -imu.getAngularOrientation().firstAngle;
 
         colorrev = hardwareMap.get(ColorSensor.class, "colorrev"); // INIT SENSOR
         colorrev2 = hardwareMap.get(ColorSensor.class, "colorrev2");
         distrev = hardwareMap.get(DistanceSensor.class, "2mrev");
 
+        /* // Use a lot of data and Ram to sent something we do not need
         telemetry.addData("DS preview on/off", "3 dots, Camera Stream");
         telemetry.addData(">", "Press Play to start");
         telemetry.update();
+         */
+
         // Wait for start command from Driver Station.
         waitForStart();
 
-        String detectedImage = "none lmao";
-
+        int detectedImage = 0;
 
         //------------------------------------------ C O D E -------------------------------------//
 
-
         if (opModeIsActive()) {
-            // Put run blocks here.
 
-            //Image detected
             cmd_pinceOpen();
-
-
-
             //Take back cone
             cmd_setElevatorPOS(0, 0);
             cmd_pinceClose();
-            cmd_setElevatorPOS(3000, 1);
+            cmd_setElevatorPOS(ELEVATOR_CLEARANCE, 1);
 
-            //NEW
-            cmd_move(0,0.2,0,1.5);
+            cmd_move(0, 0.2, 0, 1.5);
             resetRuntime();
-            while (getRuntime() < 3){
+
+            while (getRuntime() < 3) {
                 cmd_move(0, 0.4, 0, -1);
                 if (lookForColor) {
                     detectedImage = coneDetectionColor();
 
-                }else{
+                } else {
                     break;
                 }
             }
 
-            cmd_move(0,0,0,0);
+            cmd_move(0, 0, 0, 0);
             cmd_visionPosition(detectedImage);
-            cmd_setElevatorPOS(0,5);
+            cmd_setElevatorPOS(0, 5);
             cmd_pinceOpen();
 
             requestOpModeStop();
@@ -147,20 +149,18 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
     //-------------------------------------- C O D E   E N D -------------------------------------//
 
 
-
-
     public void cmd_pinceClose() {
-        pince.setPosition(.0);
-        sleep(500);
+        pince.setPosition(PINCE_CLOSE_POSITION);
+        sleep(PAUSE_BETWEEN_PINCE);
     }
 
     public void cmd_pinceOpen() {
-        pince.setPosition(.3);
-        sleep(500);
+        pince.setPosition(PINCE_OPEN_POSITION);
+        sleep(PAUSE_BETWEEN_PINCE);
     }
 
     public void cmd_setElevatorPOS(int pos, double time) {
-        pos = Math.min(Math.max(pos, 0), 4600);
+        pos = Math.min(Math.max(pos, ELEVATOR_MIN_POSITION), ELEVATOR_MAX_POSITION);
         elevator.setTargetPosition(pos);
 
         if (time > 0) {
@@ -169,7 +169,7 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
 
     }
 
-    public String coneDetectionColor() {
+    public int coneDetectionColor() {
         NormalizedRGBA normalizedColors;
         int color;
         float hue;
@@ -183,18 +183,18 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
         } else if (hue < 90) {
             cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.RED);
             lookForColor = false;
-            return "RED";
+            return RED_COLOR;
         } else if (hue < 210) {
             cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.GREEN);
             lookForColor = false;
-            return "GREEN";
+            return GREEN_COLOR;
         } else if (hue < 275) {
             cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.BLUE);
             lookForColor = false;
-            return "BLUE";
+            return BLUE_COLOR;
         } else {
         }
-        return "none lmao";
+        return NULL_COLOR;
     }
 
     public void cmd_move(double x, double y, double rx, double time) {
@@ -223,6 +223,7 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
             motorBackLeft.setPower(backLeftPower);
             motorFrontRight.setPower(frontRightPower);
             motorBackRight.setPower(backRightPower);
+
         } else {
             resetRuntime();
             while (getRuntime() < time) {
@@ -244,14 +245,16 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
 
     }
 
-    public void cmd_visionPosition(String label) {
-        if (label == "GREEN") {
-            cmd_move(-0.5,0,0,1.8);
-        }else if (label == "BLUE") {
-            cmd_move(0.5,0,0,1.8);
-        } else if (label == "RED"){
+    public void cmd_visionPosition(int color) {
+        if (color == GREEN_COLOR) {
+            cmd_move(-0.5, 0, 0, 1.8);
+        } else if (color == BLUE_COLOR) {
+            cmd_move(0.5, 0, 0, 1.8);
+        } else if (color == GREEN_COLOR) {
             return;
-        } else{
+        } else {
+
+
         }
     }
 }
