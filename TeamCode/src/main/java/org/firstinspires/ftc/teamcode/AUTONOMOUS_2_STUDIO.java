@@ -27,7 +27,7 @@ public class AUTONOMOUS_2_STUDIO extends LinearOpMode {
     static final int RED_COLOR = 2;
     static final int BLUE_COLOR = 3;
 
-    static final int ELEVATOR_CLEARANCE = 3000; //NOT USED
+    static final int ELEVATOR_CLEARANCE = 3000;
     static final int ELEVATOR_MAX_POSITION = 4600;
     static final int ELEVATOR_MIN_POSITION = 0;
 
