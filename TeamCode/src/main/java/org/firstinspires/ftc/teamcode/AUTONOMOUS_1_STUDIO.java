@@ -31,7 +31,7 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
     static final int ELEVATOR_MAX_POSITION = 4600;
     static final int ELEVATOR_MIN_POSITION = 0;
 
-    static final int PAUSE_BETWEEN_PINCE = 500;
+    static final int PAUSE_BETWEEN_PINCE = 500; //hh
     static final double PINCE_OPEN_POSITION = .30;
     static final double PINCE_CLOSE_POSITION = .0;
 
