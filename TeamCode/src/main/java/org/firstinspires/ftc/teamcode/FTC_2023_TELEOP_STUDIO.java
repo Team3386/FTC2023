@@ -1,17 +1,14 @@
-
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
-import com.qualcomm.hardware.bosch.BNO055IMU;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 
 // Set the name that'll show up on the Rev Controller
@@ -40,7 +37,7 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
     static final double ELEVATOR_SPEED = 180.0;
     static final double ELEVATOR_POWER = 0.9; // CAUTION DON'T RAISE THIS, CAN DESTROY THE ELEVATOR
 
-    // JOYSTICK SETTINGS
+    // JOYSTICK PILOT SETTINGS
     static final double JOYSTICK_PRECISION_MODIFIER = 0.8; // REDUCE TO RAISE PRECISION
     static final double JOYSTICK_DEADZONE = 0.006;
 

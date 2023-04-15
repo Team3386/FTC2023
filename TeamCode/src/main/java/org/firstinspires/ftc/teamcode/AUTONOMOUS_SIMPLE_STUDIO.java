@@ -17,7 +17,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.JavaUtil;
 
 
-@Autonomous(name = "AUTONOMOUS SIMPLE STUDIO", preselectTeleOp = "FTC-2023 1.2")
+@Autonomous(name = "AUTONOMOUS SIMPLE STUDIO", preselectTeleOp = "FTC-2023 STUDIO")
 public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
 
     private ElapsedTime timer = new ElapsedTime();
@@ -102,11 +102,11 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
         colorrev2 = hardwareMap.get(ColorSensor.class, "colorrev2");
         distrev = hardwareMap.get(DistanceSensor.class, "2mrev");
 
-        /* // Use a lot of data and Ram to sent something we do not need
-        telemetry.addData("DS preview on/off", "3 dots, Camera Stream");
+        // Use a lot of data and Ram to sent something we do not need
+        telemetry.addData("STATUS", "Gyroscope is on");
         telemetry.addData(">", "Press Play to start");
         telemetry.update();
-         */
+
 
         // Wait for start command from Driver Station.
         waitForStart();
@@ -250,7 +250,7 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
             cmd_move(-0.5, 0, 0, 1.8);
         } else if (color == BLUE_COLOR) {
             cmd_move(0.5, 0, 0, 1.8);
-        } else if (color == GREEN_COLOR) {
+        } else if (color == RED_COLOR) {
             return;
         } else {
 

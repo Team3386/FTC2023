@@ -17,10 +17,23 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.JavaUtil;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-@Autonomous(name = "AUTONOMOUS 1 STUDIO", preselectTeleOp = "FTC-2023 1.2")
+@Autonomous(name = "AUTONOMOUS 1 STUDIO", preselectTeleOp = "FTC-2023 STUDIO")
 public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
 
     private ElapsedTime timer = new ElapsedTime();
+
+    static final int NULL_COLOR = 0;
+    static final int GREEN_COLOR = 1;
+    static final int RED_COLOR = 2;
+    static final int BLUE_COLOR = 3;
+
+    static final int ELEVATOR_CLEARANCE = 3000;
+    static final int ELEVATOR_MAX_POSITION = 4600;
+    static final int ELEVATOR_MIN_POSITION = 0;
+
+    static final int PAUSE_BETWEEN_PINCE = 500;
+    static final double PINCE_OPEN_POSITION = .30;
+    static final double PINCE_CLOSE_POSITION = .0;
 
     // Pince
     Servo pince;
@@ -95,7 +108,7 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
         // Wait for start command from Driver Station.
         waitForStart();
 
-        String detectedImage = "none lmao";
+        int detectedImage = 0;
 
 
         //------------------------------------------ C O D E -------------------------------------//
@@ -172,17 +185,17 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
     //-------------------------------------- C O D E   E N D -------------------------------------//
 
     public void cmd_pinceClose() {
-        pince.setPosition(.0);
-        sleep(500);
+        pince.setPosition(PINCE_CLOSE_POSITION);
+        sleep(PAUSE_BETWEEN_PINCE);
     }
 
     public void cmd_pinceOpen() {
-        pince.setPosition(.30);
-        sleep(500);
+        pince.setPosition(PINCE_OPEN_POSITION);
+        sleep(PAUSE_BETWEEN_PINCE);
     }
 
     public void cmd_setElevatorPOS(int pos, double time) {
-        pos = Math.min(Math.max(pos, 0), 4600);
+        pos = Math.min(Math.max(pos, ELEVATOR_MIN_POSITION), ELEVATOR_MAX_POSITION);
         elevator.setTargetPosition(pos);
 
         if (time > 0) {
@@ -191,7 +204,7 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
 
     }
 
-    public String coneDetectionColor() {
+    public int coneDetectionColor() {
         NormalizedRGBA normalizedColors;
         int color;
         float hue;
@@ -205,18 +218,18 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
         } else if (hue < 90) {
             cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.RED);
             lookForColor = false;
-            return "RED";
+            return RED_COLOR;
         } else if (hue < 210) {
             cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.GREEN);
             lookForColor = false;
-            return "GREEN";
+            return GREEN_COLOR;
         } else if (hue < 275) {
             cmd_setLED(RevBlinkinLedDriver.BlinkinPattern.BLUE);
             lookForColor = false;
-            return "BLUE";
+            return BLUE_COLOR;
         } else {
         }
-        return "none lmao";
+        return NULL_COLOR;
     }
 
     public void cmd_move(double x, double y, double rx, double time) {
@@ -245,6 +258,7 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
             motorBackLeft.setPower(backLeftPower);
             motorFrontRight.setPower(frontRightPower);
             motorBackRight.setPower(backRightPower);
+
         } else {
             resetRuntime();
             while (getRuntime() < time) {
@@ -266,14 +280,16 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
 
     }
 
-    public void cmd_visionPosition(String label) {
-        if (label == "GREEN") {
+    public void cmd_visionPosition(int color) {
+        if (color == GREEN_COLOR) {
             cmd_move(-0.5, 0, 0, 1.8);
-        } else if (label == "BLUE") {
+        } else if (color == BLUE_COLOR) {
             cmd_move(0.5, 0, 0, 1.8);
-        } else if (label == "RED") {
+        } else if (color == RED_COLOR) {
             return;
         } else {
+
+
         }
     }
 }
