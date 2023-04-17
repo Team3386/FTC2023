@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.ServoController;
 
 
 // Set the name that'll show up on the Rev Controller
@@ -48,15 +49,18 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
         // Make sure your ID's match your configuration
         // Motors for the wheels or the mouvement
         // We are using a CRServo for motorBackLeft due to the number of DcMotor(4), motors in total(5)
-
+        //DcMotor for the wheels
         CRServo motorBackLeft = hardwareMap.crservo.get("leftBack");
         DcMotor motorFrontLeft = hardwareMap.dcMotor.get("leftFront");
         DcMotor motorFrontRight = hardwareMap.dcMotor.get("rightFront");
         DcMotor motorBackRight = hardwareMap.dcMotor.get("rightBack");
-
-        Servo pince = hardwareMap.servo.get("pince");
         // DcMotor for the elevator
         DcMotor elevator = hardwareMap.dcMotor.get("elevator");
+
+        // Servo linear for the elevator
+        Servo Linear = hardwareMap.servo.get("centreUp");
+        // Servo pince for the grabber
+        Servo pince = hardwareMap.servo.get("pince");
 
 
         double elevatorPOS = 0;  // Current
@@ -86,6 +90,7 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
         elevator.setDirection(DcMotorSimple.Direction.REVERSE); // ??  
         elevator.setTargetPosition(0); // ??
 
+        //
         // Retrieve the IMU from the hardware map
         BNO055IMU imu = hardwareMap.get(BNO055IMU.class, "imu");
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
@@ -106,7 +111,7 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
 
             elevator.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             elevator.setPower(ELEVATOR_POWER);
-
+            Linear.setPosition(0);
 
             // Initialization and Declaration of Joystick Variables
             double x = 0;
@@ -218,6 +223,15 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
                     SeekPosition = ELEVATOR_SEEK_POSITION_TOP; // CHECK CONSTANT
                 }
 
+                // Ajout de 3ème niveau
+                if (PlayerWithElevator.a) {
+                    Linear.setPosition(0.0);
+                }
+                if (PlayerWithElevator.b) {
+                    Linear.setPosition(1);
+                }
+                telemetry.addData("Servo Position", Linear.getPosition());
+
 
                 if ((PlayerWithElevator.dpad_up || PlayerWithElevator.dpad_down)
                         ||
@@ -259,7 +273,7 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
                 elevator.setTargetPosition((int) elevatorPOS);
 
                 light.setPattern(pattern);
-
+                telemetry.update();
             }
         }
     }
