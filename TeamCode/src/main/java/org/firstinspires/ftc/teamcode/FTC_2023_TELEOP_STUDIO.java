@@ -32,7 +32,7 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
     static final int ELEVATOR_SEEK_POSITION_BOTTOM = ELEVATOR_MIN_POSITION;
     static final double ELEVATOR_DEADZONE = 0.1;
 
-    static final double PINCE_OPEN_POSITION = .20;
+    static final double PINCE_OPEN_POSITION = .30;
     static final double PINCE_CLOSE_POSITION = .0;
 
     static final double ELEVATOR_SPEED = 180.0;
@@ -64,14 +64,14 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
 
 
         double elevatorPOS = 0;  // Current
-        double elevatorBoostPOS = 0;
-        double timerIncrements = getRuntime();
 
 
         boolean isPinceOpen = false;
         boolean isPressed_a = false;
         boolean gotoPOS = false;
         double SeekPosition = 0;
+
+        boolean boostElevator = false;
 
         light = hardwareMap.get(RevBlinkinLedDriver.class, "light");
         pattern = RevBlinkinLedDriver.BlinkinPattern.CP1_2_COLOR_GRADIENT; //Starting color
@@ -225,14 +225,24 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
                     SeekPosition = ELEVATOR_SEEK_POSITION_TOP; // CHECK CONSTANT
                 }
 
-/*                // Ajout de 3ème niveau
+                // Ajout de 3ème niveau
                 if (PlayerWithElevator.a) {
-                    linear.setPosition(0.0);
+                    boostElevator = true;
                 }
                 if (PlayerWithElevator.b) {
-                    linear.setPosition(1.0);
+                    boostElevator = false;
                 }
-                telemetry.addData("Servo Position", linear.getPosition());*/
+
+                if(boostElevator){
+                    linear.setPosition(linear.getPosition()+0.01);
+                } else {
+                    linear.setPosition(linear.getPosition()-0.009);
+                }
+
+
+
+
+                telemetry.addData("Servo Position", linear.getPosition());
 
 
                 if ((PlayerWithElevator.dpad_up || PlayerWithElevator.dpad_down)
@@ -273,42 +283,6 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
                 }
 
                 elevator.setTargetPosition((int) elevatorPOS);
-
-/*                elevatorBoostPOS = (elevatorPOS / ELEVATOR_MAX_POSITION) * 10;
-
-                linear.setPosition(Math.round(elevatorBoostPOS)/10);
-                telemetry.addData("ServoPOS",elevatorBoostPOS);
-                telemetry.addData("CalculatedPOS",Math.round(elevatorBoostPOS));*/
-
-
-                if(elevator.getTargetPosition()<4000){
-                    if (linear.getPosition() > 0.01 ){
-                        if ((getRuntime()-timerIncrements)>1){
-                            telemetry.addData("Yass","Yass");
-                            double elevatorPosition = elevator.getTargetPosition();
-                            double soustraireElevatorPosition = elevatorPosition - 100;
-
-                            double soustraireTimeAfterComingDown = getRuntime()-0.5;
-                            //telemetry.addData("TimeAfterComingDown",String.valueOf(TimeAfterComingDown));
-                            telemetry.addData("soustraireTimeAfterComingDown",String.valueOf(soustraireTimeAfterComingDown));
-                            telemetry.addData("PositonAfterComingDown",String.valueOf(elevatorPosition));
-                            telemetry.addData("Positon Soustraite",String.valueOf(soustraireElevatorPosition));
-                            if ((elevatorPosition > soustraireElevatorPosition)) {
-
-                                linear.setPosition(linear.getPosition() - 0.1);
-                                telemetry.addData("linear position",String.valueOf(linear.getPosition()));
-                            }
-                            timerIncrements = getRuntime();
-                        }
-
-
-                        /*if ((elevatorPosition < soustraireElevatorPosition)) {
-
-                            linear.setPosition(linear.getPosition() - 0.1);
-                            telemetry.addData("linear position",String.valueOf(linear.getPosition()));
-                        }*/
-                    }
-                }else{linear.setPosition(1);}
 
                 light.setPattern(pattern);
                 telemetry.update();
