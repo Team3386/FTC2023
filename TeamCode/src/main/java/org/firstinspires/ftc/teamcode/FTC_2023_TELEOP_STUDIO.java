@@ -40,6 +40,7 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
     static final double BOOST_ACTIVATION_HEIGHT = 3000;
 
     static final double ELEVATOR_SPEED = 180.0;
+    static final double ELEVATOR_SPEED_SLOW = 100.0;
     static final double ELEVATOR_POWER = 0.9; // CAUTION DON'T RAISE THIS, CAN DESTROY THE ELEVATOR
 
     // JOYSTICK PILOT SETTINGS
@@ -251,17 +252,12 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
                         elevatorPOS -= ELEVATOR_SPEED * Math.abs(PlayerWithElevator.left_trigger) * 3;
 
 
-                    } else if (PlayerWithElevator.dpad_up && (elevator.getTargetPosition() < ELEVATOR_MAX_POSITION)) { // REMOVE IF NOT USED BY PILOTS
-                        elevatorPOS += ELEVATOR_SPEED;
+                    } else if (PlayerWithElevator.dpad_up && (PlayerWithElevator.right_bumper)) { // ADDED FOR SAFETY/SLOWER MOVEMENT
+                        elevatorPOS += ELEVATOR_SPEED_SLOW;
 
-                    } else if (PlayerWithElevator.dpad_down && (elevator.getTargetPosition() > ELEVATOR_MIN_POSITION)) {
+                    } else if (PlayerWithElevator.dpad_down && (PlayerWithElevator.left_bumper)) {
+                        elevatorPOS -= ELEVATOR_SPEED_SLOW;
 
-                        double dxSpeed = 0;
-
-                        if (isPinceOpen) {
-                            dxSpeed = 200;
-                        }
-                        elevatorPOS -= ELEVATOR_SPEED + Math.abs(dxSpeed);
                     }
                 } else {
 

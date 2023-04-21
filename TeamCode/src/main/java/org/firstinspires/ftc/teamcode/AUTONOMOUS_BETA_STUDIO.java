@@ -28,8 +28,8 @@ public class AUTONOMOUS_BETA_STUDIO extends LinearOpMode {
     static final int RED_COLOR = 2;
     static final int BLUE_COLOR = 3;
 
-    static final int ELEVATOR_CLEARANCE = 5500;
-    static final int ELEVATOR_MAX_POSITION = 5500; // Was 4600
+    static final int ELEVATOR_CLEARANCE = 5900;
+    static final int ELEVATOR_MAX_POSITION = 6100; // Was 4600
     static final int ELEVATOR_MIN_POSITION = 0;
 
     static final double MAX_COLLISION_DISTANCE = 13.5;
@@ -188,22 +188,24 @@ public class AUTONOMOUS_BETA_STUDIO extends LinearOpMode {
 
             cmd_move(0,0,0,1);
             cmd_pinceOpen();
-            cmd_move(-0.2, -0.2, 0, pegCollisionTimer);
+            cmd_move(-0.2, -0.2, 0, pegCollisionTimer + 0.5);
 
             resetRuntime();
             while (botHeading > -1.571) {
                 botHeading = -imu.getAngularOrientation().firstAngle;
-                cmd_move(0, 0, 0.25, -1);
+                cmd_move(0, 0, -0.25, -1);
                 telemetry.addData("Angle 2", botHeading);
                 telemetry.update();
-                if (getRuntime() > 4) break;//                  FAILSAFE
+                if (getRuntime() > 8) break;//    FAILSAFE
 
             }
 
+            cmd_move(0,0,0, 1);
 
 
 
             //END NEW PROCESS
+            cmd_setElevatorPOS(0,0);
             cmd_visionPosition(detectedImage);
             cmd_setElevatorPOS(0, 5);
             cmd_pinceOpen();
