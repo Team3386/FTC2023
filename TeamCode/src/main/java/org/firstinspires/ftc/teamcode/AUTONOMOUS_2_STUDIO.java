@@ -38,6 +38,8 @@ public class AUTONOMOUS_2_STUDIO extends LinearOpMode {
     // Pince
     Servo pince;
 
+    Servo linear;
+
     // Elevator
     DcMotor elevator;
 
@@ -70,6 +72,12 @@ public class AUTONOMOUS_2_STUDIO extends LinearOpMode {
         light = hardwareMap.get(RevBlinkinLedDriver.class, "light"); // INIT LEDs
 
         pince = hardwareMap.servo.get("pince"); // INIT PINCE
+
+        // Servo linear for the elevator
+        linear = hardwareMap.servo.get("centreUp");
+
+        // Servo linear for the elevator
+        Servo linear = hardwareMap.servo.get("centreUp");
 
         elevator = hardwareMap.dcMotor.get("elevator"); // INIT ELEVATOR
         elevator.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -109,6 +117,7 @@ public class AUTONOMOUS_2_STUDIO extends LinearOpMode {
         waitForStart();
 
         int detectedImage = 0;
+        linear.setPosition(0.20);
 
 
         //------------------------------------------ C O D E -------------------------------------//
@@ -155,7 +164,7 @@ public class AUTONOMOUS_2_STUDIO extends LinearOpMode {
             }
             // END OF TURN
             resetRuntime();
-            while (((DistanceSensor) colorrev).getDistance(DistanceUnit.CM) > 8.5) {
+            while (((DistanceSensor) colorrev).getDistance(DistanceUnit.CM) > 7.8) {
                 cmd_move(-0.25, 0, 0, -1);
                 if (getRuntime() > 2) break; //      FAILSAFE
 
@@ -164,7 +173,7 @@ public class AUTONOMOUS_2_STUDIO extends LinearOpMode {
             cmd_pinceOpen();
 
             //CODE FOR PARKING
-            cmd_move(0.2, 0, 0, 1.1);
+            cmd_move(0.2, 0, 0, 0.8);
             cmd_move(0, -0.3, 0, 2);
             cmd_visionPosition(detectedImage);
             cmd_setElevatorPOS(0, 5);
@@ -284,4 +293,5 @@ public class AUTONOMOUS_2_STUDIO extends LinearOpMode {
 
         }
     }
+
 }

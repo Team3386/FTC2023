@@ -25,15 +25,19 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
     RevBlinkinLedDriver.BlinkinPattern pattern;
 
     // 1 = 100% SPEED 0.5 = 50% SPEED. LOWER THIS TO REDUCE SPEED
-    static final double SPEED_MODIFIER = 1;
-    static final int ELEVATOR_MAX_POSITION = 5000;
+    static final double SPEED_MODIFIER = 1.2;
+    static final int ELEVATOR_MAX_POSITION = 6500;
     static final int ELEVATOR_MIN_POSITION = 0;
     static final int ELEVATOR_SEEK_POSITION_TOP = ELEVATOR_MAX_POSITION;
     static final int ELEVATOR_SEEK_POSITION_BOTTOM = ELEVATOR_MIN_POSITION;
     static final double ELEVATOR_DEADZONE = 0.1;
 
-    static final double PINCE_OPEN_POSITION = .30;
-    static final double PINCE_CLOSE_POSITION = .0;
+    static final double PINCE_OPEN_POSITION = .25;
+    static final double PINCE_CLOSE_POSITION = 0.5;
+
+    static final double BOOST_MAX_POSITION = 0.82;
+    static final double BOOST_MIN_POSITION = 0.20;
+    static final double BOOST_ACTIVATION_HEIGHT = 3000;
 
     static final double ELEVATOR_SPEED = 180.0;
     static final double ELEVATOR_POWER = 0.9; // CAUTION DON'T RAISE THIS, CAN DESTROY THE ELEVATOR
@@ -62,16 +66,12 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
         // Servo pince for the grabber
         Servo pince = hardwareMap.servo.get("pince");
 
-
         double elevatorPOS = 0;  // Current
-
 
         boolean isPinceOpen = false;
         boolean isPressed_a = false;
         boolean gotoPOS = false;
         double SeekPosition = 0;
-
-        boolean boostElevator = false;
 
         light = hardwareMap.get(RevBlinkinLedDriver.class, "light");
         pattern = RevBlinkinLedDriver.BlinkinPattern.CP1_2_COLOR_GRADIENT; //Starting color
@@ -227,22 +227,13 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
 
                 // Ajout de 3ème niveau
                 if (PlayerWithElevator.a) {
-                    boostElevator = true;
+                    linear.setPosition(BOOST_MAX_POSITION);
+
                 }
                 if (PlayerWithElevator.b) {
-                    boostElevator = false;
+                    linear.setPosition(BOOST_MIN_POSITION);
+
                 }
-
-                if(boostElevator){
-                    linear.setPosition(linear.getPosition()+0.01);
-                } else {
-                    linear.setPosition(linear.getPosition()-0.009);
-                }
-
-
-
-
-                telemetry.addData("Servo Position", linear.getPosition());
 
 
                 if ((PlayerWithElevator.dpad_up || PlayerWithElevator.dpad_down)
@@ -283,6 +274,8 @@ public class FTC_2023_TELEOP_STUDIO extends LinearOpMode {
                 }
 
                 elevator.setTargetPosition((int) elevatorPOS);
+
+                telemetry.addData("elevatorPOS",elevatorPOS);
 
                 light.setPattern(pattern);
                 telemetry.update();

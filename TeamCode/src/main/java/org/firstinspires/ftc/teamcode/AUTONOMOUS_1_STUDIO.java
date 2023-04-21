@@ -38,6 +38,8 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
     // Pince
     Servo pince;
 
+    Servo linear;
+
     // Elevator
     DcMotor elevator;
 
@@ -70,6 +72,9 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
         light = hardwareMap.get(RevBlinkinLedDriver.class, "light"); // INIT LEDs
 
         pince = hardwareMap.servo.get("pince"); // INIT PINCE
+
+        // Servo linear for the elevator
+        linear = hardwareMap.servo.get("centreUp");
 
         elevator = hardwareMap.dcMotor.get("elevator"); // INIT ELEVATOR
         elevator.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -109,6 +114,7 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
         waitForStart();
 
         int detectedImage = 0;
+        linear.setPosition(0.20);
 
 
         //------------------------------------------ C O D E -------------------------------------//
@@ -292,4 +298,5 @@ public class AUTONOMOUS_1_STUDIO extends LinearOpMode {
 
         }
     }
+
 }

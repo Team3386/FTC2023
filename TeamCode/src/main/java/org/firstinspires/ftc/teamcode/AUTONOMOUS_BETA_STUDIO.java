@@ -15,10 +15,11 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.JavaUtil;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 
-@Autonomous(name = "AUTONOMOUS SIMPLE STUDIO", preselectTeleOp = "FTC-2023 STUDIO")
-public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
+@Autonomous(name = "AUTONOMOUS BETA STUDIO", preselectTeleOp = "FTC-2023 STUDIO")
+public class AUTONOMOUS_BETA_STUDIO extends LinearOpMode {
 
     private ElapsedTime timer = new ElapsedTime();
 
@@ -27,10 +28,12 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
     static final int RED_COLOR = 2;
     static final int BLUE_COLOR = 3;
 
-    static final int ELEVATOR_CLEARANCE = 3000;
-    static final int ELEVATOR_MAX_POSITION = 4600; // Was 4600
+    static final int ELEVATOR_CLEARANCE = 5500;
+    static final int ELEVATOR_MAX_POSITION = 5500; // Was 4600
     static final int ELEVATOR_MIN_POSITION = 0;
 
+    static final double MAX_COLLISION_DISTANCE = 13.5;
+    static final double MIN_COLLISION_DISTANCE = 2.5;
     static final int PAUSE_BETWEEN_PINCE = 500;
     static final double PINCE_OPEN_POSITION = 0.25;
     static final double PINCE_CLOSE_POSITION = 0.5;
@@ -102,6 +105,7 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
         imu.initialize(parameters);
+        double botHeading = -imu.getAngularOrientation().firstAngle;
 
         colorrev = hardwareMap.get(ColorSensor.class, "colorrev"); // INIT SENSOR
         colorrev2 = hardwareMap.get(ColorSensor.class, "colorrev2");
@@ -123,6 +127,7 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
         waitForStart();
 
         int detectedImage = 0;
+        double pegCollisionTimer = 0;
 
 
         //------------------------------------------ C O D E -------------------------------------//
@@ -149,6 +154,56 @@ public class AUTONOMOUS_SIMPLE_STUDIO extends LinearOpMode {
             }
 
             cmd_move(0, 0, 0, 1);
+
+            //NEW PROCESS
+            resetRuntime();
+            while (botHeading < 0.83) {
+                botHeading = -imu.getAngularOrientation().firstAngle;
+                cmd_move(0, 0, 0.25, -1);
+                telemetry.addData("Angle 1", botHeading);
+                telemetry.update();
+                if (getRuntime() > 4) break;//                  FAILSAFE
+
+            }
+
+            cmd_move(0,0,0,1);
+
+
+            resetRuntime(); // going forward until collision detected
+            while ((MIN_COLLISION_DISTANCE > distrev.getDistance(DistanceUnit.CM))
+                    || (distrev.getDistance(DistanceUnit.CM) > MAX_COLLISION_DISTANCE )) {
+                cmd_move(0.2, 0.2, 0, -1);
+                pegCollisionTimer = getRuntime();
+
+                if (getRuntime() > 3) {
+                    cmd_move(-0.2, -0.2, 0, 3);
+                    cmd_visionPosition(detectedImage);
+                    cmd_setElevatorPOS(0, 5);
+                    cmd_pinceOpen();
+                    requestOpModeStop();
+                    break; // FAILSAFE
+                }
+
+            }
+
+            cmd_move(0,0,0,1);
+            cmd_pinceOpen();
+            cmd_move(-0.2, -0.2, 0, pegCollisionTimer);
+
+            resetRuntime();
+            while (botHeading > -1.571) {
+                botHeading = -imu.getAngularOrientation().firstAngle;
+                cmd_move(0, 0, 0.25, -1);
+                telemetry.addData("Angle 2", botHeading);
+                telemetry.update();
+                if (getRuntime() > 4) break;//                  FAILSAFE
+
+            }
+
+
+
+
+            //END NEW PROCESS
             cmd_visionPosition(detectedImage);
             cmd_setElevatorPOS(0, 5);
             cmd_pinceOpen();
